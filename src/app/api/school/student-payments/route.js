@@ -1,6 +1,5 @@
 // app/api/school/student-payments/route.js - نسخه اصلاح شده کامل
 
-/* global process */
 import { connectDB } from "../../../../lib/db";
 import StudentPayment from "../../../../models/StudentPayment";
 import SchoolFee from "../../../../models/SchoolFee";

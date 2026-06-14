@@ -4,7 +4,6 @@ import Enrollment from "../../../../models/Enrollment";
 import Lesson from "../../../../models/Lesson";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
-import mongoose from "mongoose";
 function parseDuration(duration) {
   const hoursMatch = duration.match(/(\d+)\s*ساعت/);
   const minutesMatch = duration.match(/(\d+)\s*دقیقه/);
@@ -27,7 +26,7 @@ export async function POST(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(
         JSON.stringify({ error: "توکن نامعتبر است" }), 
         { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -132,7 +131,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(
         JSON.stringify({ error: "توکن نامعتبر است" }), 
         { status: 401, headers: { 'Content-Type': 'application/json' } }

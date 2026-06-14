@@ -1,4 +1,3 @@
-import { resolve } from "path";
 import { connectDB } from "../../../lib/db";
 import Contact from "../../../models/Contact";
 import { sanitizeInput } from "../../../lib/security";

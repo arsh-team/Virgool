@@ -6,7 +6,6 @@ import Payment from "../../../../../models/Payment";
 import Period from "../../../../../models/Periods";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
-import mongoose from "mongoose";
 
 export async function POST(request, { params }) {
   try {
@@ -24,7 +23,7 @@ export async function POST(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(
         JSON.stringify({ error: "توکن نامعتبر است" }),
         { status: 401, headers: { "Content-Type": "application/json" } }

@@ -1,8 +1,6 @@
 // app/api/auth/profile/route.js
 import { connectDB } from "../../../../lib/db";
 import User from "../../../../models/User";
-import Subject from "../../../../models/Subject";
-import Class from "../../../../models/Class";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 
@@ -19,7 +17,7 @@ export async function PUT(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
       });

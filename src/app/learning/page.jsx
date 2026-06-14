@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../components/header";
 import {
-  Play, ExternalLink, Search, BookOpen, GraduationCap, ChevronLeft,
-  ChevronRight, Clock, Eye, Loader2, Sparkles, Video, School, Star
+  Play, ExternalLink, Search, BookOpen, GraduationCap,
+  Clock, Eye, Sparkles, School
 } from "lucide-react";
 
 const gradeNames = {

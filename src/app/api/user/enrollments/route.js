@@ -1,7 +1,6 @@
 // app/api/enrollments/route.js
 import { connectDB } from "../../../../lib/db";
 import Enrollment from "../../../../models/Enrollment";
-import Service from "../../../../models/Service";
 import Payment from "../../../../models/Payment";
 import Period from "../../../../models/Periods";
 import jwt from "jsonwebtoken";
@@ -17,7 +16,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json({ error: "توکن نامعتبر است" }, { status: 401 });
     }
     const enrollments = await Enrollment.find({ user: decoded.id })

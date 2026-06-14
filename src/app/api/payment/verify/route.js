@@ -2,8 +2,6 @@
 import { connectDB } from "../../../../lib/db";
 import Payment from "../../../../models/Payment";
 import Service from "../../../../models/Service";
-import jwt from "jsonwebtoken";
-import { getJwtSecret } from "../../../../lib/auth";
 
 const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID;
 if (!ZARINPAL_MERCHANT_ID) {

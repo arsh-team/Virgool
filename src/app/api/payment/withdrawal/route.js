@@ -5,7 +5,6 @@ import Payment from "../../../../models/Payment";
 import Sub from "../../../../models/Sub";
 import Service from "../../../../models/Service";
 import { authenticateRequest } from "../../../../lib/auth";
-import { sanitizeInput } from "../../../../lib/security";
 import mongoose from "mongoose";
 
 export async function POST(request) {

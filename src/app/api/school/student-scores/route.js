@@ -4,7 +4,6 @@ import MonthlyScore from "../../../../models/MonthlyScore";
 import Subject from "../../../../models/Subject";
 import User from "../../../../models/User";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import { getJwtSecret } from "../../../../lib/auth";
 
 async function authenticate(request) {

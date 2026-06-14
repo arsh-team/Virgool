@@ -15,10 +15,10 @@ export async function GET(request, { params }) {
       );
     }
     const token = authHeader.replace("Bearer ", "");
-    let decoded;
+    let _decoded;
     try {
-      decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+      _decoded = jwt.verify(token, getJwtSecret());
+    } catch (_error) {
       return NextResponse.json(
         { error: "توکن نامعتبر است" },
         { status: 401 }

@@ -1,6 +1,5 @@
 import { connectDB } from "../../../../lib/db";
 import Payment from "../../../../models/Payment";
-import Service from "../../../../models/Service";
 import Enrollment from "../../../../models/Enrollment";
 import Period from "../../../../models/Periods";
 import jwt from "jsonwebtoken";
@@ -18,7 +17,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json({ error: "توکن نامعتبر است" }, { status: 401 });
     }
 

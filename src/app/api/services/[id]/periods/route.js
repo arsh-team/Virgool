@@ -88,7 +88,7 @@ export async function GET(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, SECRET);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: "توکن نامعتبر است" },
         { status: 401 }
@@ -123,7 +123,7 @@ export async function POST(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, SECRET);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: "توکن نامعتبر است" },
         { status: 401 }

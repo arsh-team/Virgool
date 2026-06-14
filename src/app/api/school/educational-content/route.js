@@ -95,7 +95,7 @@ async function findClassIdFromRequest(request, searchParams) {
       const extracted = extractObjectId(body.classId);
       if (extracted) return extracted;
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
   

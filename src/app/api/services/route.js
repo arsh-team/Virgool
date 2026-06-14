@@ -26,7 +26,7 @@ async function authenticate(request) {
   try {
     const decoded = jwt.verify(token, SECRET);
     return { userId: decoded.id };
-  } catch (error) {
+  } catch (_error) {
     return { error: "توکن نامعتبر است", status: 401 };
   }
 }

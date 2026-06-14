@@ -159,7 +159,7 @@ export async function GET(request, { params }) {
     
     return new Response(
       JSON.stringify({
-        status: 'in_progress',
+        quizStatus: 'in_progress',
         hasActiveAttempt: true,
         attemptId: attempt._id,
         startTime: attempt.startTime,

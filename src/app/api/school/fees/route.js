@@ -4,7 +4,6 @@ import { connectDB } from "../../../../lib/db";
 import SchoolFee from "../../../../models/SchoolFee";
 import PaymentExtraItem from "../../../../models/PaymentExtraItem";
 import User from "../../../../models/User";
-import Class from "../../../../models/Class";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 import mongoose from "mongoose";

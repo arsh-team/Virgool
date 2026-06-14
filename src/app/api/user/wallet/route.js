@@ -16,7 +16,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json(
         { error: "توکن نامعتبر است" }, 
         { status: 401 }

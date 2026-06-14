@@ -1,7 +1,6 @@
 import { connectDB } from "../../../../lib/db";
 import Enrollment from "../../../../models/Enrollment";
 import Product from "../../../../models/Product";
-import User from "../../../../models/User";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 export async function POST(request) {
@@ -18,7 +17,7 @@ export async function POST(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(
         JSON.stringify({ error: "توکن نامعتبر است" }), 
         { status: 401, headers: { 'Content-Type': 'application/json' } }

@@ -1,9 +1,24 @@
+import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import globals from "globals";
-import pluginReact from "eslint-plugin-react";
-import { defineConfig } from "eslint/config";
 
-export default defineConfig([
-  { files: ["**/*.{js,mjs,cjs,jsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
-  pluginReact.configs.flat.recommended,
-]);
+const compat = new FlatCompat({
+  baseDirectory: import.meta.dirname,
+});
+
+export default [
+  { ignores: [".next/**", "node_modules/**"] },
+  js.configs.recommended,
+  ...compat.extends("next/core-web-vitals"),
+  {
+    files: ["src/app/api/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+  {
+    rules: {
+      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
+  },
+];

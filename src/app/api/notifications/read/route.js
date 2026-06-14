@@ -26,15 +26,14 @@ export async function PUT(request) {
     }
     const body = await request.json();
     const { notificationId, markAll } = body;
-    let result;
     if (markAll) {
-      result = await Notification.updateMany(
+      await Notification.updateMany(
         { user: userId, isRead: false },
         { $set: { isRead: true } }
       );
       console.log("Marked all notifications as read for user:", userId);
     } else if (notificationId) {
-      result = await Notification.findOneAndUpdate(
+      await Notification.findOneAndUpdate(
         { _id: notificationId, user: userId },
         { $set: { isRead: true } },
         { new: true }

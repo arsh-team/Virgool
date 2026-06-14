@@ -1,4 +1,3 @@
-/* global process */
 import { connectDB } from "../../../../lib/db";
 import User from "../../../../models/User";
 import Class from "../../../../models/Class";

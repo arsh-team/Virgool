@@ -4,7 +4,6 @@ import Period from "../../../../../../models/Periods";
 import Service from "../../../../../../models/Service";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 
 const SECRET = process.env.JWT_SECRET;
 
@@ -22,7 +21,7 @@ export async function PUT(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, SECRET);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: "توکن نامعتبر است" },
         { status: 401 }

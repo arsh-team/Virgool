@@ -10,7 +10,6 @@ if (!ZARINPAL_MERCHANT_ID) {
 }
 
 const ZARINPAL_REQUEST_URL = "https://sandbox.zarinpal.com/pg/v4/payment/request.json";
-const ZARINPAL_VERIFY_URL = "https://sandbox.zarinpal.com/pg/v4/payment/verify.json";
 const ZARINPAL_START_PAY_URL = "https://sandbox.zarinpal.com/pg/StartPay/";
 
 async function authenticate(request) {

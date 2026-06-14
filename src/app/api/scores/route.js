@@ -1,6 +1,5 @@
 import { connectDB } from "../../../lib/db";
 import Score from "../../../models/Score";
-import Period from "../../../models/Periods";
 import User from "../../../models/User";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -20,7 +19,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json(
         { error: "توکن نامعتبر است" }, 
         { status: 401 }
@@ -86,7 +85,7 @@ export async function POST(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json(
         { error: "توکن نامعتبر است" }, 
         { status: 401 }
@@ -148,7 +147,7 @@ export async function PUT(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(
         JSON.stringify({ error: "توکن نامعتبر است" }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }

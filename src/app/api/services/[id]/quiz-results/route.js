@@ -3,7 +3,6 @@ import { connectDB } from "../../../../../lib/db";
 import Attempt from "../../../../../models/Attempt";
 import Quiz from "../../../../../models/Quiz";
 import Service from "../../../../../models/Service";
-import User from "../../../../../models/User";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
 

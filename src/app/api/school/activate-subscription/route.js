@@ -1,4 +1,3 @@
-/* global process */
 import { connectDB } from "../../../../lib/db";
 import Service from "../../../../models/Service";
 import jwt from "jsonwebtoken";

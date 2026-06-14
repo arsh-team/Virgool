@@ -2,10 +2,8 @@
 import { connectDB } from "../../../../../lib/db";
 import MonthlyScore from "../../../../../models/MonthlyScore";
 import Class from "../../../../../models/Class";
-import User from "../../../../../models/User";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
-import mongoose from "mongoose";
 
 async function authenticate(request) {
   const authHeader = request.headers.get("authorization");

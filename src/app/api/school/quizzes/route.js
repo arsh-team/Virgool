@@ -101,7 +101,7 @@ export async function POST(request) {
     
     const body = await request.json();
     const { 
-      title, description, timeLimit, passingScore, maxAttempts, isActive, classId,
+      title, description, timeLimit, passingScore, _maxAttempts, isActive, classId,
       startDate, endDate, showResults, showCorrectAnswers, showDetailedReport 
     } = body;
     

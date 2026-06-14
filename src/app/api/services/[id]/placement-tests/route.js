@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), { status: 401 });
     }
     const resolvedParams = await params;
@@ -64,7 +64,7 @@ export async function POST(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), { status: 401 });
     }
     const resolvedParams = await params;

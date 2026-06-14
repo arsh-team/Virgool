@@ -1,8 +1,6 @@
 // app/api/school/teacher-classes/route.js
 import { connectDB } from "../../../../lib/db";
 import Class from "../../../../models/Class";
-import Service from "../../../../models/Service";
-import User from "../../../../models/User";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 

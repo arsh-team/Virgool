@@ -1,7 +1,6 @@
 // jobs/expire-quiz-attempts.js
 import { connectDB } from "@/lib/db";
 import Attempt from "@/models/Attempt";
-import Quiz from "@/models/Quiz";
 
 export async function expireQuizAttempts() {
   try {

@@ -9,44 +9,6 @@ import { NextResponse } from "next/server";
 
 const SECRET = process.env.JWT_SECRET;
 
-function generateTrackingCode() {
-  return `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-}
-
-async function createPaymentsForPeriod(periodId, serviceId, amount) {
-  const enrollments = await Enrollment.find({ service: serviceId });
-  let createdCount = 0;
-  
-  for (const enrollment of enrollments) {
-    const existingPayment = await Payment.findOne({
-      user: enrollment.user,
-      service: serviceId,
-      forPeriodId: periodId
-    });
-    
-    if (!existingPayment) {
-      const trackingCode = generateTrackingCode();
-      const payment = new Payment({
-        user: enrollment.user,
-        service: serviceId,
-        enrollment: enrollment._id,
-        amount: amount,
-        netAmount: amount,
-        type: 'full',
-        installmentNumber: 1,
-        dueDate: new Date(),
-        status: 'pending',
-        forPeriodId: periodId,
-        trackingCode
-      });
-      await payment.save();
-      createdCount++;
-    }
-  }
-  
-  return createdCount;
-}
-
 export async function PUT(request, { params }) {
   try {
     await connectDB();
@@ -63,7 +25,7 @@ export async function PUT(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, SECRET);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: "توکن نامعتبر است" },
         { status: 401 }
@@ -128,7 +90,7 @@ export async function PUT(request, { params }) {
     );
     
     // Get service price (reuse existing service)
-    const priceAmount = service.priceAfterDiscount || service.price;
+    const _priceAmount = service.priceAfterDiscount || service.price;
     
     // Create new period for the next term if needed
     const nextPeriodStart = new Date(newEndDate);

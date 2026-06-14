@@ -23,7 +23,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -60,7 +60,7 @@ export async function GET(request) {
           service: service._id,
           paymentStatus: 'paid'
         });
-        const revenue = enrollments.reduce((sum, enrollment) => {
+        const revenue = enrollments.reduce((sum, _enrollment) => {
           const price = service.priceAfterDiscount || service.price;
           return sum + price;
         }, 0);

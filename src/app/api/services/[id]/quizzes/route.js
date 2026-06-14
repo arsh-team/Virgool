@@ -1,7 +1,6 @@
 import { connectDB } from "../../../../../lib/db";
 import Quiz from "../../../../../models/Quiz";
 import Service from "../../../../../models/Service";
-import User from "../../../../../models/User"; 
 import { getJwtSecret } from "../../../../../lib/auth";
 import jwt from "jsonwebtoken";
 export async function GET(request, { params }) {
@@ -21,7 +20,7 @@ export async function GET(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -90,7 +89,7 @@ export async function POST(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },

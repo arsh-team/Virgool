@@ -6,7 +6,6 @@ import User from "../../../../models/User";
 import Class from "../../../../models/Class";
 import Subject from "../../../../models/Subject";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import { getJwtSecret } from "../../../../lib/auth";
 
 async function authenticate(request) {
@@ -41,7 +40,7 @@ export async function GET(request) {
     const reportType = searchParams.get("type"); // monthly, semester1, semester2, annual
     const studentId = searchParams.get("studentId");
     const schoolId = searchParams.get("schoolId");
-    const classId = searchParams.get("classId");
+    const _classId = searchParams.get("classId");
     const monthNumber = searchParams.get("monthNumber");
     const academicYear = searchParams.get("academicYear");
     

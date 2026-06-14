@@ -90,7 +90,7 @@ export async function GET(request, { params }) {
     }
     
     // محاسبه پاسخ‌های تفکیکی
-    const detailedAnswers = quiz.questions.map((question, idx) => {
+    const detailedAnswers = quiz.questions.map((question, _idx) => {
       const userAnswer = attempt.answers.find(a => a.questionId === question._id?.toString());
       
       let isCorrect = false;

@@ -1,8 +1,6 @@
 // app/api/auth/me/route.js
 import { connectDB } from "../../../../lib/db";
 import User from "../../../../models/User";
-import Subject from "../../../../models/Subject";
-import Class from "../../../../models/Class";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 

@@ -3,7 +3,6 @@ import { connectDB } from "../../../../../lib/db";
 import Service from "../../../../../models/Service";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
-import mongoose from "mongoose";
 export async function GET(request, { params }) {
   try {
     await connectDB();
@@ -21,7 +20,7 @@ export async function GET(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -77,7 +76,7 @@ export async function PUT(request, { params }) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return new Response(JSON.stringify({ error: "توکن نامعتبر است" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -85,7 +84,7 @@ export async function PUT(request, { params }) {
     }
     const resolvedParams = await params;
     const serviceId = resolvedParams.id;
-    const body = await request.json();
+    const _body = await request.json();
     const service = await Service.findOne({
       _id: serviceId,
       $or: [

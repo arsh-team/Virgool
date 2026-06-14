@@ -10,6 +10,7 @@ export const metadata = {
   description: "با هوش مصنوعی بهترین خودت شو",
 };
 
+// eslint-disable-next-line react/prop-types
 export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl">

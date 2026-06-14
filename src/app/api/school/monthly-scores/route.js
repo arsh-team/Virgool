@@ -1,8 +1,6 @@
 // app/api/school/monthly-scores/route.js
 import { connectDB } from "../../../../lib/db";
 import MonthlyScore from "../../../../models/MonthlyScore";
-import Subject from "../../../../models/Subject";
-import Class from "../../../../models/Class";
 import User from "../../../../models/User";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";

@@ -2,7 +2,6 @@
 import { connectDB } from "../../../lib/db";
 import Service from "../../../models/Service";
 import Enrollment from "../../../models/Enrollment";
-import User from "../../../models/User";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../lib/auth";
@@ -20,7 +19,7 @@ export async function GET(request) {
     let decoded;
     try {
       decoded = jwt.verify(token, getJwtSecret());
-    } catch (error) {
+    } catch (_error) {
       return Response.json({ error: "توکن نامعتبر است" }, { status: 401 });
     }
     const userId = decoded.id;
