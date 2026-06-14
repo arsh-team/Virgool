@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blue-50: #f0f4ff;
+  --color-blue-100: #dde5ff;
+  --color-blue-200: #c2ceff;
+  --color-blue-300: #97abff;
+  --color-blue-400: #5a80fb;
+  --color-blue-500: #5a80fb;
+  --color-blue-600: #4563c2;
+  --color-blue-700: #3d58ad;
+  --color-blue-800: #334b94;
+  --color-blue-900: #2a3d7a;
+  --color-blue-950: #1c2a55;
+}
+
+@font-face {
+  font-family: 'vazir';
+  src: url('/fonts/Vazir-Medium.ttf');
+}
+body {
+  font-family: 'vazir';
+}
