@@ -3,14 +3,15 @@ import { connectDB } from "../../../../lib/db";
 import Payment from "../../../../models/Payment";
 import Service from "../../../../models/Service";
 
-const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID;
-if (!ZARINPAL_MERCHANT_ID) {
-  throw new Error("ZARINPAL_MERCHANT_ID is not configured");
-}
 const ZARINPAL_VERIFY_URL = "https://sandbox.zarinpal.com/pg/v4/payment/verify.json";
 
 export async function GET(request) {
   try {
+    const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID;
+    if (!ZARINPAL_MERCHANT_ID) {
+      return Response.json({ error: "درگاه پرداخت پیکربندی نشده است" }, { status: 500 });
+    }
+
     await connectDB();
     
     const { searchParams } = new URL(request.url);

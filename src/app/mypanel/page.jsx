@@ -1,6 +1,6 @@
 // app/dashboard/page.jsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { 
   Home, 
@@ -59,6 +59,14 @@ const months = [
 ];
 
 export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState(null);

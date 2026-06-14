@@ -4,11 +4,6 @@ import Payment from "../../../../models/Payment";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 
-const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID;
-if (!ZARINPAL_MERCHANT_ID) {
-  throw new Error("ZARINPAL_MERCHANT_ID is not configured");
-}
-
 const ZARINPAL_REQUEST_URL = "https://sandbox.zarinpal.com/pg/v4/payment/request.json";
 const ZARINPAL_START_PAY_URL = "https://sandbox.zarinpal.com/pg/StartPay/";
 
@@ -28,6 +23,11 @@ async function authenticate(request) {
 
 export async function POST(request) {
   try {
+    const ZARINPAL_MERCHANT_ID = process.env.ZARINPAL_MERCHANT_ID;
+    if (!ZARINPAL_MERCHANT_ID) {
+      return Response.json({ error: "درگاه پرداخت پیکربندی نشده است" }, { status: 500 });
+    }
+
     await connectDB();
     
     const auth = await authenticate(request);
