@@ -18,7 +18,7 @@
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.546.0",
     "mongoose": "^8.19.1",
-    "next": "15.5.6",
+    "next": "^16.2.9",
     "nextjs-toast-notify": "^1.54.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -31,7 +31,7 @@
     "@types/node": "24.8.1",
     "@types/react": "19.2.2",
     "eslint": "^9.37.0",
-    "eslint-config-next": "15.5.6",
+    "eslint-config-next": "^16.2.9",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.4.0",
     "tailwindcss": "^4"

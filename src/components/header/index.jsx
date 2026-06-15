@@ -569,12 +569,12 @@ export default function Header() {
                           className="flex-1"
                         >
                           <h3 className="text-xl font-bold text-white mb-1">
-                            سلام کاربر عزیز 👋
+                            سلام دوست عزیز 👋
                           </h3>
                           <p className="text-white/80 text-sm">
                             {unreadCount > 0
                               ? `${unreadCount} اعلان جدید داری`
-                              : "همه اعلان‌ها رو خوندی ✅"}
+                              : "همه اعلان‌ها رو خوندی "}
                           </p>
                         </motion.div>
 
