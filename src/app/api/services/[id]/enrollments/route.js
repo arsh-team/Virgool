@@ -1,9 +1,7 @@
-// app/api/services/[id]/enroll/route.js
 import { connectDB } from "../../../../../lib/db";
 import Service from "../../../../../models/Service";
 import Enrollment from "../../../../../models/Enrollment";
 import Payment from "../../../../../models/Payment";
-import Period from "../../../../../models/Periods";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
 
@@ -33,7 +31,6 @@ export async function POST(request, { params }) {
     const { id: serviceId } = await params;
     const userId = decoded.id;
     
-    // Check if service exists
     const service = await Service.findById(serviceId);
     if (!service) {
       return new Response(
@@ -42,7 +39,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Check if already enrolled
     const existingEnrollment = await Enrollment.findOne({
       user: userId,
       service: serviceId
@@ -55,7 +51,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Check capacity
     if (service.maxCapacity > 0) {
       const enrolledCount = await Enrollment.countDocuments({ service: serviceId });
       if (enrolledCount >= service.maxCapacity) {
@@ -66,10 +61,8 @@ export async function POST(request, { params }) {
       }
     }
     
-    // Calculate price with discount
     const priceAfterDiscount = service.priceAfterDiscount || service.price;
     
-    // Create enrollment
     const enrollment = new Enrollment({
       user: userId,
       service: serviceId,
@@ -80,64 +73,34 @@ export async function POST(request, { params }) {
     
     await enrollment.save();
     
-    // Update service students count
     await Service.findByIdAndUpdate(serviceId, {
       $inc: { studentsCount: 1 }
     });
+
+    const trackingCode = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     
-    // Find active period for this service
-    const activePeriod = await Period.findOne({
+    const payment = new Payment({
+      user: userId,
       service: serviceId,
-      isActive: true
-    }).sort({ startDate: -1 });
+      enrollment: enrollment._id,
+      amount: priceAfterDiscount,
+      netAmount: priceAfterDiscount,
+      type: 'full',
+      status: 'pending',
+      trackingCode
+    });
     
-    // If there's an active period, create payment for it
-    if (activePeriod) {
-      const existingPayment = await Payment.findOne({
-        user: userId,
-        service: serviceId,
-        forPeriodId: activePeriod._id
-      });
-      
-      if (!existingPayment) {
-        const trackingCode = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-        
-        const payment = new Payment({
-          user: userId,
-          service: serviceId,
-          enrollment: enrollment._id,
-          amount: priceAfterDiscount,
-          netAmount: priceAfterDiscount,
-          type: 'full',
-          installmentNumber: 1,
-          dueDate: activePeriod.endDate,
-          status: 'pending',
-          forPeriodId: activePeriod._id,
-          trackingCode
-        });
-        
-        await payment.save();
-        
-        return new Response(
-          JSON.stringify({
-            message: "ثبت‌نام با موفقیت انجام شد",
-            enrollment,
-            payment: {
-              _id: payment._id,
-              amount: payment.amount,
-              dueDate: payment.dueDate,
-              status: payment.status
-            }
-          }),
-          { status: 201, headers: { "Content-Type": "application/json" } }
-        );
-      }
-    }
+    await payment.save();
     
     return new Response(
       JSON.stringify({
         message: "ثبت‌نام با موفقیت انجام شد",
-        enrollment
+        enrollment,
+        payment: {
+          _id: payment._id,
+          amount: payment.amount,
+          status: payment.status
+        }
       }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );

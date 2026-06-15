@@ -73,9 +73,3 @@ export async function expireQuizAttempts() {
   }
 }
 
-// Run this job every minute using a cron job or setInterval
-if (typeof setInterval !== 'undefined') {
-  setInterval(async () => {
-    await expireQuizAttempts();
-  }, 60000); // Check every minute
-}

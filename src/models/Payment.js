@@ -52,10 +52,6 @@ const paymentSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  forPeriodId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Period'
-  },
   netAmount: {
     type: Number
   },

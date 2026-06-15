@@ -1,8 +1,6 @@
-// app/api/enrollments/route.js
 import { connectDB } from "../../../../lib/db";
 import Enrollment from "../../../../models/Enrollment";
 import Payment from "../../../../models/Payment";
-import Period from "../../../../models/Periods";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 export async function GET(request) {
@@ -27,34 +25,23 @@ export async function GET(request) {
     if (enrollments.length > 0) {
       const serviceIds = [...new Set(enrollments.map(e => e.service?._id).filter(Boolean))];
 
-      const [latestPeriods, payments] = await Promise.all([
-        Period.aggregate([
-          { $match: { service: { $in: serviceIds } } },
-          { $sort: { _id: -1 } },
-          { $group: { _id: "$service", periodId: { $first: "$_id" } } },
-        ]),
-        Payment.find({ user: decoded.id, service: { $in: serviceIds } })
-          .select("service forPeriodId status")
-          .lean(),
-      ]);
+      const payments = await Payment.find({ user: decoded.id, service: { $in: serviceIds } })
+        .select("service status")
+        .lean();
 
-      const periodMap = new Map(latestPeriods.map(p => [p._id.toString(), p.periodId.toString()]));
       const paymentMap = new Map();
       for (const pay of payments) {
         const key = pay.service.toString();
-        if (!paymentMap.has(key)) paymentMap.set(key, pay);
+        if (!paymentMap.has(key) || pay.status === 'paid') {
+          paymentMap.set(key, pay);
+        }
       }
 
       for (const enrollment of enrollments) {
         const serviceId = enrollment.service?._id?.toString();
         if (!serviceId) { enrollment.paymentStatus = 'pending'; continue; }
         const payment = paymentMap.get(serviceId);
-        const latestPeriodId = periodMap.get(serviceId);
-        if (payment && latestPeriodId) {
-          enrollment.paymentStatus = (payment.forPeriodId?.toString() === latestPeriodId && payment.status === "paid") ? 'paid' : 'pending';
-        } else {
-          enrollment.paymentStatus = 'pending';
-        }
+        enrollment.paymentStatus = payment?.status === 'paid' ? 'paid' : 'pending';
       }
     }
     return Response.json({ enrollments });

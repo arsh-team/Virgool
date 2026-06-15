@@ -28,14 +28,13 @@ export async function GET(request) {
     
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user');
-    const forPeriodId = searchParams.get('forPeriodId');
+    const serviceId = searchParams.get('service');
 
-    // 🔥 رفع باگ کرش سرور: اعتبارسنجی فرمت شناسه در کوئری پارامترها
     if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
       return Response.json({ error: "فرمت شناسه کاربر نامعتبر است" }, { status: 400 });
     }
-    if (forPeriodId && !mongoose.Types.ObjectId.isValid(forPeriodId)) {
-      return Response.json({ error: "فرمت شناسه دوره نامعتبر است" }, { status: 400 });
+    if (serviceId && !mongoose.Types.ObjectId.isValid(serviceId)) {
+      return Response.json({ error: "فرمت شناسه خدمت نامعتبر است" }, { status: 400 });
     }
 
     let query = {};
@@ -52,13 +51,12 @@ export async function GET(request) {
       query.user = new mongoose.Types.ObjectId(decoded.id);
     }
 
-    if (forPeriodId) {
-      query.forPeriodId = new mongoose.Types.ObjectId(forPeriodId);
+    if (serviceId) {
+      query.service = new mongoose.Types.ObjectId(serviceId);
     }
 
     const scores = await Score.find(query)
       .populate('user', 'firstname lastname')
-      .populate('forPeriodId', 'startDate endDate')
       .lean();
 
     return Response.json(scores);
@@ -98,17 +96,16 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { user, service, forPeriodId, details } = body;
+    const { user, service, details } = body;
 
-    if (!user || !service || !forPeriodId) {
+    if (!user || !service) {
       return Response.json(
-        { error: "فیلدهای user, service و forPeriodId الزامی هستند" },
+        { error: "فیلدهای user و service الزامی هستند" },
         { status: 400 }
       );
     }
 
-    // 🔥 رفع باگ کرش سرور: اعتبارسنجی مقادیر ارسالی بدنه درخواست
-    if (!mongoose.Types.ObjectId.isValid(user) || !mongoose.Types.ObjectId.isValid(service) || !mongoose.Types.ObjectId.isValid(forPeriodId)) {
+    if (!mongoose.Types.ObjectId.isValid(user) || !mongoose.Types.ObjectId.isValid(service)) {
       return Response.json(
         { error: "فرمت شناسه‌های ارسال شده نامعتبر است" },
         { status: 400 }
@@ -118,7 +115,6 @@ export async function POST(request) {
     const newScore = new Score({
       user: new mongoose.Types.ObjectId(user),
       service: new mongoose.Types.ObjectId(service),
-      forPeriodId: new mongoose.Types.ObjectId(forPeriodId),
       details: details || []
     });
 
@@ -156,24 +152,22 @@ export async function PUT(request) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user');
-    const forPeriodId = searchParams.get('forPeriodId');
+    const serviceId = searchParams.get('service');
 
-    if (!userId || !forPeriodId) {
+    if (!userId || !serviceId) {
       return new Response(
-        JSON.stringify({ error: "فیلدهای user و forPeriodId الزامی هستند" }),
+        JSON.stringify({ error: "فیلدهای user و service الزامی هستند" }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // 🔥 رفع باگ کرش سرور: اعتبارسنجی اولیه فرمت ObjectIdها
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(forPeriodId)) {
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(serviceId)) {
       return new Response(
-        JSON.stringify({ error: "فرمت شناسه کاربر یا دوره نامعتبر است" }),
+        JSON.stringify({ error: "فرمت شناسه کاربر یا خدمت نامعتبر است" }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // 🔥 رفع باگ دسترسی (Privilege Escalation): کاربران عادی به هیچ وجه نباید بتوانند نمرات خود را تغییر دهند.
     const requestingUser = await User.findById(decoded.id);
     if (!requestingUser || requestingUser.type !== 'creator') {
       return new Response(
@@ -183,25 +177,18 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { details, service } = body;
+    const { details } = body;
 
-    if (!details || !service) {
+    if (!details) {
       return new Response(
-        JSON.stringify({ error: "فیلدهای details و service الزامی هستند" }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(service)) {
-      return new Response(
-        JSON.stringify({ error: "فرمت شناسه خدمت نامعتبر است" }),
+        JSON.stringify({ error: "فیلد details الزامی است" }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     const score = await Score.findOne({
       user: new mongoose.Types.ObjectId(userId),
-      forPeriodId: new mongoose.Types.ObjectId(forPeriodId)
+      service: new mongoose.Types.ObjectId(serviceId)
     });
 
     if (score) {
@@ -214,8 +201,7 @@ export async function PUT(request) {
     } else {
       const newScore = new Score({
         user: new mongoose.Types.ObjectId(userId),
-        service: new mongoose.Types.ObjectId(service),
-        forPeriodId: new mongoose.Types.ObjectId(forPeriodId),
+        service: new mongoose.Types.ObjectId(serviceId),
         details: details
       });
       const savedScore = await newScore.save();

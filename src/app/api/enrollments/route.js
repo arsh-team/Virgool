@@ -1,11 +1,9 @@
-// app/api/creator/enrollments/route.js
 import { connectDB } from "../../../lib/db";
 import Service from "../../../models/Service";
 import Enrollment from "../../../models/Enrollment";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../lib/auth";
-import Period from "../../../models/Periods";
 import Payment from "../../../models/Payment";
 
 export async function GET(request) {
@@ -42,39 +40,27 @@ export async function GET(request) {
         const uniqueServiceIds = [...new Set(enrollments.map(e => e.service?._id).filter(Boolean))];
         const userIds = [...new Set(enrollments.map(e => e.user?._id).filter(Boolean))];
 
-        const [latestPeriods, payments] = await Promise.all([
-          Period.aggregate([
-            { $match: { service: { $in: uniqueServiceIds } } },
-            { $sort: { _id: -1 } },
-            { $group: { _id: "$service", periodId: { $first: "$_id" } } },
-          ]),
-          Payment.find({
-            user: { $in: userIds },
-            service: { $in: uniqueServiceIds },
-          })
-            .select("user service forPeriodId status")
-            .lean(),
-        ]);
+        const payments = await Payment.find({
+          user: { $in: userIds },
+          service: { $in: uniqueServiceIds },
+        })
+          .select("user service status")
+          .lean();
 
-        const periodMap = new Map(latestPeriods.map(p => [p._id.toString(), p.periodId.toString()]));
         const paymentLookup = new Map();
         for (const pay of payments) {
           const key = `${pay.user.toString()}_${pay.service.toString()}`;
-          paymentLookup.set(key, pay);
+          if (!paymentLookup.has(key) || pay.status === 'paid') {
+            paymentLookup.set(key, pay);
+          }
         }
 
         for (const enrollment of enrollments) {
           const serviceId = enrollment.service?._id?.toString();
           const userIdVal = enrollment.user?._id?.toString();
           if (!serviceId || !userIdVal) { enrollment.paymentStatus = 'pending'; continue; }
-          const key = `${userIdVal}_${serviceId}`;
-          const payment = paymentLookup.get(key);
-          const latestPeriodId = periodMap.get(serviceId);
-          if (payment && latestPeriodId) {
-            enrollment.paymentStatus = (payment.forPeriodId?.toString() === latestPeriodId && payment.status === "paid") ? 'paid' : 'pending';
-          } else {
-            enrollment.paymentStatus = 'pending';
-          }
+          const payment = paymentLookup.get(`${userIdVal}_${serviceId}`);
+          enrollment.paymentStatus = payment?.status === 'paid' ? 'paid' : 'pending';
         }
       }
     }

@@ -4,7 +4,6 @@ import Enrollment from "../../../../models/Enrollment";
 import Wallet from "../../../../models/Wallet";
 import User from "../../../../models/User";
 import mongoose from "mongoose";
-import Period from "../../../../models/Periods";
 import Payment from "../../../../models/Payment";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
@@ -64,29 +63,20 @@ export async function GET(request) {
     if (enrollments.length > 0) {
       const uniqueServiceIds = [...new Set(enrollments.map(e => e.service?._id?.toString()).filter(Boolean))];
       const userIds = [...new Set(enrollments.map(e => e.user?._id?.toString()).filter(Boolean))];
-      const [latestPeriods, payments] = await Promise.all([
-        Period.aggregate([
-          { $match: { service: { $in: uniqueServiceIds.map(id => new mongoose.Types.ObjectId(id)) } } },
-          { $sort: { _id: -1 } },
-          { $group: { _id: "$service", periodId: { $first: "$_id" } } },
-        ]),
-        Payment.find({ user: { $in: userIds.map(id => new mongoose.Types.ObjectId(id)) }, service: { $in: uniqueServiceIds.map(id => new mongoose.Types.ObjectId(id)) } })
-          .select("user service forPeriodId status")
-          .lean(),
-      ]);
-      const periodMap = new Map(latestPeriods.map(p => [p._id.toString(), p.periodId.toString()]));
+      const payments = await Payment.find({ user: { $in: userIds.map(id => new mongoose.Types.ObjectId(id)) }, service: { $in: uniqueServiceIds.map(id => new mongoose.Types.ObjectId(id)) } })
+        .select("user service status")
+        .lean();
       const paymentMap = new Map();
       for (const pay of payments) {
         const key = `${pay.user.toString()}_${pay.service.toString()}`;
-        if (!paymentMap.has(key)) paymentMap.set(key, pay);
+        if (!paymentMap.has(key) || pay.status === 'paid') paymentMap.set(key, pay);
       }
       for (const enrollment of enrollments) {
         const serviceId = enrollment.service?._id?.toString();
         const userIdVal = enrollment.user?._id?.toString();
         if (!serviceId || !userIdVal) { enrollment.paymentStatus = 'pending'; continue; }
         const pay = paymentMap.get(`${userIdVal}_${serviceId}`);
-        const latestPeriodId = periodMap.get(serviceId);
-        enrollment.paymentStatus = (pay && latestPeriodId && pay.forPeriodId?.toString() === latestPeriodId && pay.status === "paid") ? 'paid' : 'pending';
+        enrollment.paymentStatus = pay?.status === 'paid' ? 'paid' : 'pending';
       }
     }
     const totalEnrollments = enrollments.length;
@@ -104,7 +94,7 @@ export async function GET(request) {
     const netRevenue = totalRevenue - platformFee;
     const pendingPayments = await Payment.find({ paidToCreator: false, service: { $in: serviceIds } });
     const totalPendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-    const pendingBalance = totalPendingAmount * 0.95; // 5% fee
+    const pendingBalance = totalPendingAmount * 0.95;
     const wallet = await Wallet.findOne({ user: userId });
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

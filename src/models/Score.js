@@ -18,11 +18,6 @@ const scoreSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Enrollment'
   },
-  forPeriodId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Period',
-    required: true
-  },
   details: { 
     type: [detailSchema], 
     default: [] 
@@ -32,5 +27,4 @@ const scoreSchema = new mongoose.Schema({
 });
 scoreSchema.index({ user: 1, service: 1 });
 scoreSchema.index({ service: 1 });
-scoreSchema.index({ forPeriodId: 1 });
 export default mongoose.models.Score || mongoose.model('Score', scoreSchema);

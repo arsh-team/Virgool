@@ -131,7 +131,7 @@ export default function ProfilePage() {
           age: userData.age || "",
           nationalCode: userData.nationalCode || "",
           cardNumber: userData.cardNumber || "",
-          schoolRole: userData.schoolRole || "student",
+          schoolRole: userData.type === "creator" ? "principal" : userData.schoolRole || "student",
 
           studentInfo: {
             parentName: userData.studentInfo?.parentName || "",
@@ -205,11 +205,11 @@ export default function ProfilePage() {
         age: editForm.age,
         nationalCode: editForm.nationalCode,
         cardNumber: editForm.cardNumber,
-        schoolRole: editForm.schoolRole,
+        schoolRole: student.type === "creator" ? 'مدیر' : editForm.schoolRole,
       };
 
       // اضافه کردن اطلاعات دانش‌آموزی اگر نقش دانش‌آموز است
-      if (editForm.schoolRole === "student") {
+      if (editForm.schoolRole === "student" && student.type !== "creator") {
         submitData.studentInfo = editForm.studentInfo;
       }
 
@@ -434,7 +434,7 @@ export default function ProfilePage() {
                         {user.email}
                       </p>
                       <span className="inline-block mb-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                        {getRoleTitle(user.schoolRole)}
+                        {user.type === "creator" ? "مدیر" : getRoleTitle(user.schoolRole)}
                       </span>
                     </div>
                   </div>
@@ -480,12 +480,12 @@ export default function ProfilePage() {
           <div className="flex gap-2 mb-6 border-b">
             <button
               onClick={() => setActiveTab("personal")}
-              className={`px-6 py-3 font-medium transition-all ${activeTab === "personal" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600 hover:text-blue-600"}`}
+              className={`px-6 py-3 font-medium transition-all ${user.type === "creator" ? 'w-full' : ''}  ${activeTab === "personal" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600 hover:text-blue-600"}`}
             >
               <User className="w-4 h-4 inline ml-2" />
               اطلاعات شخصی
             </button>
-            {user.schoolRole === "student" && (
+            {user.schoolRole === "student" && user.type !== "creator" && (
               <button
                 onClick={() => setActiveTab("student")}
                 className={`px-6 py-3 font-medium transition-all ${activeTab === "student" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600 hover:text-blue-600"}`}
@@ -705,7 +705,7 @@ export default function ProfilePage() {
                       </select>
                     ) : (
                       <div className="p-3 bg-gray-50 rounded-xl">
-                        {getRoleTitle(user.schoolRole)}
+                        {user.type === "creator" ? "مدیر" : getRoleTitle(user.schoolRole)}
                       </div>
                     )}
                   </div>

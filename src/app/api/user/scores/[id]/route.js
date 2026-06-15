@@ -1,5 +1,3 @@
-// app/api/user/scores/[id]/route.js
-import Period from "../../../../../models/Periods";
 import { connectDB } from "../../../../../lib/db";
 import Score from "../../../../../models/Score";
 import jwt from "jsonwebtoken";
@@ -25,13 +23,9 @@ export async function GET(request, { params }) {
         { status: 401 }
       );
     }
-    const period = await Period.findOne({ service: id })
-    .sort({ _id: -1 }) 
-    .lean();
-    const periodId = period ? period._id : null;
     const scores = await Score.find({
       user: decoded.id,
-      forPeriodId: periodId
+      service: id
     });
     return Response.json({ scores });
   } catch (error) {
