@@ -2,6 +2,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 const CartContext = createContext();
+const MAX_CART_ITEMS = 50;
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   useEffect(() => {
@@ -20,6 +21,9 @@ export const CartProvider = ({ children }) => {
   }, [cart]);
   const addToCart = (product) => {
     setCart((prev) => {
+      if (prev.length >= MAX_CART_ITEMS) {
+        return prev;
+      }
       const exist = prev.find((item) => item._id === product._id);
       if (exist) return prev;
       const newCart = [...prev, { 

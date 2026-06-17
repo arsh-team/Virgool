@@ -1,6 +1,7 @@
 'use client';
 
 import { SUBSCRIPTION_TIERS, TIER_LIMITS, getTierDisplayName, getFeatureDescription } from '@/config/subscription-limits';
+import { useSubscription } from '@/hooks/useSubscription';
 
 /**
  * SubscriptionTierBadge - نمایش نشان اشتراک کاربر
@@ -70,11 +71,6 @@ export function SubscriptionLimitProgress({ current, max, label, resourceType })
  * FeatureGate - کامپوننت برای مخفی کردن یا غیرفعال کردن ویژگی‌ها بر اساس اشتراک
  */
 export function FeatureGate({ feature, children, fallback = null, showUpgradeMessage = true }) {
-  // This component should be used with user context that includes subscription tier
-  // For now, it's a placeholder that renders children
-  // In real usage, you'd check the user's subscription tier here
-  
-  const { useSubscription } = require('@/hooks/useSubscription');
   const { hasAccess, currentTier } = useSubscription();
   
   if (!hasAccess(feature)) {

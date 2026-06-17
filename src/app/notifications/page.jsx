@@ -164,7 +164,10 @@ export default function NotificationsPage() {
       await markAsRead(notification._id);
     }
     if (notification.actionUrl) {
-      router.push(notification.actionUrl);
+      // Validate URL before navigation
+      if (notification.actionUrl.startsWith('/') || notification.actionUrl.startsWith('http')) {
+        router.push(notification.actionUrl);
+      }
     }
   }, [markAsRead, router]);
   const filteredNotifications = notifications.filter(notification => {
@@ -182,11 +185,13 @@ export default function NotificationsPage() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
-  useEffect(() => {
-    if (notifications.length > 0 && unreadCount > 0) {
-      markAsRead(); 
-    }
-  }, [notifications.length]); 
+  // Disabled: auto-marking all notifications as read on page load is removed.
+  // Users should explicitly mark notifications as read by clicking them or using the "mark all as read" button.
+  // useEffect(() => {
+  //   if (notifications.length > 0 && unreadCount > 0) {
+  //     markAsRead(); 
+  //   }
+  // }, [notifications.length]); 
   if (loading && notifications.length === 0) {
     return (
       <>

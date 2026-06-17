@@ -154,6 +154,16 @@ export async function GET(request, { params }) {
       return Response.json({ error: "کلاس یافت نشد" }, { status: 404 });
     }
     
+    // Verify the user belongs to the school that owns this class
+    const requestingUser = await User.findById(auth.userId);
+    if (requestingUser) {
+      const isCreator = requestingUser.type === 'creator';
+      const belongsToSchool = requestingUser.school?.toString() === classData.school?.toString();
+      if (!isCreator && !belongsToSchool) {
+        return Response.json({ error: "شما دسترسی به اطلاعات این کلاس را ندارید" }, { status: 403 });
+      }
+    }
+    
     console.log("✅ Class found:", classData.name);
     
     return Response.json({ class: classData });
@@ -192,6 +202,17 @@ export async function PUT(request, { params }) {
     const requestingUser = await User.findById(auth.userId);
     if (!requestingUser || (requestingUser.type !== 'creator' && requestingUser.schoolRole !== 'teacher')) {
       return Response.json({ error: "شما دسترسی به این عملیات ندارید" }, { status: 403 });
+    }
+    
+    // Verify the class belongs to the user's school before updating
+    const classToUpdate = await Class.findById(validClassId);
+    if (!classToUpdate) {
+      return Response.json({ error: "کلاس یافت نشد" }, { status: 404 });
+    }
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === classToUpdate.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش کلاس این مدرسه را ندارید" }, { status: 403 });
     }
     
     const body = await request.json();
@@ -247,11 +268,18 @@ export async function DELETE(request, { params }) {
       return Response.json({ error: "شما دسترسی به این عملیات ندارید" }, { status: 403 });
     }
     
-    const deletedClass = await Class.findByIdAndDelete(validClassId);
-    
-    if (!deletedClass) {
+    // Verify the class belongs to the user's school before deleting
+    const classToDelete = await Class.findById(validClassId);
+    if (!classToDelete) {
       return Response.json({ error: "کلاس یافت نشد" }, { status: 404 });
     }
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === classToDelete.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف کلاس این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await Class.findByIdAndDelete(validClassId);
     
     return Response.json({ message: "کلاس با موفقیت حذف شد" });
     

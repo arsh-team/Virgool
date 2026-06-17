@@ -685,6 +685,10 @@ export default function WalletPage() {
         setError("لطفا مبلغ معتبر وارد کنید");
         return;
       }
+      if (Number(amount) > 100000000) {
+        setError("مبلغ وارد شده بیش از حد مجاز است");
+        return;
+      }
       setLoading(true);
       try {
         await handleAddFunds(parseInt(amount));

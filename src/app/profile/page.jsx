@@ -196,6 +196,31 @@ export default function ProfilePage() {
         return;
       }
 
+      // اعتبارسنجی فیلدها
+      if (!editForm.firstname?.trim() || !editForm.lastname?.trim()) {
+        setError("نام و نام خانوادگی الزامی است");
+        setSaving(false);
+        return;
+      }
+      if (editForm.phone && !/^09\d{9}$/.test(editForm.phone.trim())) {
+        setError("شماره تماس باید با 09 شروع شده و 11 رقم باشد");
+        setSaving(false);
+        return;
+      }
+      if (editForm.nationalCode && !/^\d{10}$/.test(editForm.nationalCode.trim())) {
+        setError("کدملی باید دقیقاً 10 رقم باشد");
+        setSaving(false);
+        return;
+      }
+      if (editForm.age !== undefined && editForm.age !== null && editForm.age !== "") {
+        const ageNum = Number(editForm.age);
+        if (isNaN(ageNum) || ageNum < 5 || ageNum > 120) {
+          setError("سن باید عددی بین 5 تا 120 باشد");
+          setSaving(false);
+          return;
+        }
+      }
+
       // آماده سازی داده‌ها برای ارسال
       const submitData = {
         username: editForm.username,

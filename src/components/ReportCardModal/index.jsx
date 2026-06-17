@@ -169,29 +169,42 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
   };
   
   const downloadSinglePDF = async () => {
-    const element = document.getElementById("single-report-iframe");
-    if (!element) return;
+    if (!reportHtml) return;
     
     try {
       const html2canvas = (await import("html2canvas")).default;
       const { default: jsPDF } = await import("jspdf");
       
-      // دریافت محتوای iframe
-      const iframeDoc = element.contentDocument || element.contentWindow.document;
-      const reportElement = iframeDoc.querySelector(".report-card");
+      // ساخت div موقت برای رندر کارنامه
+      const container = document.createElement("div");
+      container.style.position = "absolute";
+      container.style.left = "-9999px";
+      container.style.top = "-9999px";
+      container.style.backgroundColor = "white";
+      container.style.width = "900px";
+      container.style.direction = "rtl";
+      container.innerHTML = reportHtml;
+      document.body.appendChild(container);
+      
+      const reportElement = container.querySelector(".report-card");
       
       if (!reportElement) {
+        document.body.removeChild(container);
         setError("خطا در پیدا کردن محتوای کارنامه");
         return;
       }
       
       const canvas = await html2canvas(reportElement, {
-        scale: 2.5,
+        scale: 2,
         backgroundColor: "#ffffff",
         logging: false,
         useCORS: true,
-        allowTaint: false
+        allowTaint: true,
+        width: 900,
+        windowWidth: 900
       });
+      
+      document.body.removeChild(container);
       
       const imgData = canvas.toDataURL("image/png");
       const doc = new jsPDF({
@@ -200,14 +213,21 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         format: "a4"
       });
       
-      const imgWidth = 210;
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const imgWidth = pageWidth - 10; // 5mm margin each side
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const marginY = (297 - imgHeight) / 2;
+      const marginX = 5;
+      let position = 5; // top margin
       
-      if (marginY > 0) {
-        doc.addImage(imgData, "PNG", 0, marginY, imgWidth, imgHeight);
-      } else {
-        doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      doc.addImage(imgData, "PNG", marginX, position, imgWidth, imgHeight);
+      let heightLeft = imgHeight - (pageHeight - 10);
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 5;
+        doc.addPage();
+        doc.addImage(imgData, "PNG", marginX, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - 10);
       }
       
       doc.save(`report_card_${reportData?.student?.firstname}_${reportData?.student?.lastname}_${academicYear}.pdf`);
@@ -284,8 +304,16 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
   const printSingleReport = () => {
     const iframe = document.getElementById("single-report-iframe");
     if (iframe) {
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-      iframeDoc.execCommand('print', false, null);
+      try {
+        const iframeWindow = iframe.contentWindow;
+        if (iframeWindow) {
+          iframeWindow.focus();
+          iframeWindow.print();
+        }
+      } catch (err) {
+        console.error("Print error:", err);
+        setError("خطا در چاپ کارنامه");
+      }
     }
   };
   
@@ -372,6 +400,12 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         <meta charset="UTF-8">
         <title>کارنامه تحصیلی - ${escapeHtml(data.student?.firstname)} ${escapeHtml(data.student?.lastname)}</title>
         <style>
+          @font-face {
+            font-family: 'Vazir';
+            src: url('/fonts/Vazir-Medium.ttf') format('truetype');
+            font-weight: normal;
+            font-display: swap;
+          }
           * {
             margin: 0;
             padding: 0;
@@ -379,26 +413,28 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
           }
           body {
             background: #f0f4f8;
-            padding: 24px;
+            padding: 20px;
             direction: rtl;
+            font-family: 'Vazir', Tahoma, Arial, sans-serif;
+            line-height: 1.8;
           }
           .report-card {
-            max-width: 900px;
+            max-width: 850px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
           }
           .header {
             background: linear-gradient(135deg, #1c2a55 0%, #4563c2 100%);
             color: white;
-            padding: 28px;
+            padding: 24px;
             text-align: center;
           }
           .header h1 {
-            font-size: 26px;
-            margin-bottom: 6px;
+            font-size: 22px;
+            margin-bottom: 4px;
             font-weight: 800;
           }
           .header p {
@@ -408,8 +444,8 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
           .student-info {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            padding: 24px;
+            gap: 12px;
+            padding: 20px;
             background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
           }
@@ -419,58 +455,61 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
           .info-label {
             font-size: 11px;
             color: #64748b;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           .info-value {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
             color: #1e293b;
           }
           .scores-table {
-            padding: 24px;
+            padding: 20px;
           }
           table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 13px;
           }
           th {
             background: #e2e8f0;
-            padding: 12px;
-            font-size: 13px;
+            padding: 10px 8px;
+            font-size: 12px;
             font-weight: 700;
             color: #1e293b;
             border: 1px solid #cbd5e1;
           }
           td {
             border: 1px solid #e2e8f0;
+            padding: 10px 8px;
+            font-size: 13px;
           }
           .summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            padding: 24px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 20px;
             background: #f8fafc;
             border-top: 1px solid #e2e8f0;
           }
           .summary-card {
             text-align: center;
-            padding: 16px;
+            padding: 12px 20px;
             background: white;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           }
           .summary-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
           }
           .summary-value {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 900;
             color: #4563c2;
           }
           .footer {
-            padding: 16px 24px;
+            padding: 12px 20px;
             text-align: center;
             border-top: 1px solid #e2e8f0;
             font-size: 10px;
@@ -486,9 +525,9 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
           }
           .status-badge {
             display: inline-block;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
           }
           .status-badge.status-passed {
@@ -542,7 +581,7 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
               <thead>
                 <tr>
                   <th>عنوان درس</th>
-                  ${isMonthly ? '<th>فعالیت (20)</th><th>امتحان (20)</th><th>نمره نهایی</th><th>وضعیت</th>' : '<th>میانگین</th><th>وضعیت</th>'}
+                  ${isMonthly ? '<th>فعالیت</th><th>امتحان</th><th>نمره نهایی</th><th>وضعیت</th>' : '<th>میانگین</th><th>وضعیت</th>'}
                 </tr>
               </thead>
               <tbody>
@@ -556,6 +595,14 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
               <div class="summary-label">تعداد دروس</div>
               <div class="summary-value">${Object.keys(scores).length}</div>
             </div>
+            ${totalAverage !== null ? `<div class="summary-card">
+              <div class="summary-label">میانگین کل</div>
+              <div class="summary-value">${totalAverage}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">وضعیت</div>
+              <div class="summary-value" style="font-size:16px; color: ${totalAverage >= 10 ? '#16a34a' : '#dc2626'}">${summaryStatus}</div>
+            </div>` : ''}
           </div>
           
           <div class="footer">
@@ -724,7 +771,7 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                   className="w-full rounded-xl border-0 shadow-lg"
                   style={{ minHeight: "650px", height: "auto" }}
                   title="کارنامه تحصیلی"
-                  sandbox="allow-popups"
+                  sandbox="allow-same-origin allow-scripts allow-popups"
                 />
                 
                 <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t">

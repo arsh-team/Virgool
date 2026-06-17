@@ -245,7 +245,7 @@ export default function PublicSchoolPage() {
                     <div className="flex items-center gap-3">
                       <Globe className="w-5 h-5 text-blue-500 flex-shrink-0" />
                       <a
-                        href={school.schoolInfo.website}
+                        href={school.schoolInfo.website?.startsWith('http') ? school.schoolInfo.website : '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 hover:underline text-sm"

@@ -34,6 +34,7 @@ export async function POST(request) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
     }
 
+    // Validate that the plan is a valid subscription tier
     if (!plan || !Object.values(SUBSCRIPTION_TIERS).includes(plan)) {
       return Response.json({ error: "پلن اشتراک نامعتبر است" }, { status: 400 });
     }
@@ -43,9 +44,18 @@ export async function POST(request) {
       return Response.json({ error: "مدرسه یافت نشد" }, { status: 404 });
     }
 
+    // Check that the requesting user is the creator/owner of the service
     if (service.creator.toString() !== auth.userId) {
       return Response.json({ error: "شما دسترسی به این مدرسه را ندارید" }, { status: 403 });
     }
+
+    // TODO: IMPORTANT - Payment verification must be implemented before activating subscription.
+    // This endpoint currently activates subscription without verifying payment.
+    // A payment gateway integration should be added here to:
+    // 1. Verify that the user has completed payment for the selected plan
+    // 2. Validate the payment transaction ID/reference
+    // 3. Only proceed with activation after successful payment confirmation
+    // Without payment verification, any authenticated creator can activate any plan for free.
 
     const now = new Date();
     const oneYearLater = new Date(now);

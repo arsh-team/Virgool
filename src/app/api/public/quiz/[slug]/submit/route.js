@@ -108,19 +108,8 @@ export async function POST(request, { params }) {
     const timeLimitSeconds = quiz.timeLimit * 60;
     const isExpired = timeSpent > timeLimitSeconds;
     
-    if (isExpired && !isAutoSubmit) {
-      attempt.status = 'expired';
-      attempt.endTime = now;
-      attempt.timeSpent = timeLimitSeconds;
-      await attempt.save();
-      
-      return new Response(
-        JSON.stringify({ 
-          error: "زمان آزمون به پایان رسیده است",
-          expired: true
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    if (isExpired) {
+      isAutoSubmit = true; // Server-side override: force auto-submit on expired quizzes
     }
     
     // Calculate score

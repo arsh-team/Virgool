@@ -74,6 +74,15 @@ const months = [
 
 // ==================== MODAL COMPONENTS ====================
 
+// توابع کمکی اعتبارسنجی فرم‌ها
+const PHONE_REGEX = /^09\d{9}$/;
+const NATIONAL_CODE_REGEX = /^\d{10}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidPhone = (phone) => !phone || PHONE_REGEX.test(phone.trim());
+const isValidNationalCode = (code) => !code || NATIONAL_CODE_REGEX.test(code.trim());
+const isValidEmail = (email) => EMAIL_REGEX.test((email || "").trim());
+const isPositiveNumber = (val) => { const n = Number(val); return val !== "" && val !== null && val !== undefined && !isNaN(n) && n > 0; };
+
 // Student Modal
 const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [formData, setFormData] = useState({
@@ -120,6 +129,11 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
       alert("لطفاً نام، نام خانوادگی و ایمیل را وارد کنید");
       return;
     }
+    if (!isValidEmail(formData.email)) { alert("فرمت ایمیل صحیح نیست"); return; }
+    if (!isValidPhone(formData.phone)) { alert("شماره تماس باید با 09 شروع شده و 11 رقم باشد"); return; }
+    if (!isValidNationalCode(formData.nationalCode)) { alert("کدملی باید دقیقاً 10 رقم باشد"); return; }
+    if (formData.parentPhone && !isValidPhone(formData.parentPhone)) { alert("شماره والدین باید با 09 شروع شده و 11 رقم باشد"); return; }
+    if (formData.emergencyContact && !isValidPhone(formData.emergencyContact)) { alert("شماره تماس اضطراری باید با 09 شروع شده و 11 رقم باشد"); return; }
     setLoading(true);
     try {
       await onSubmit(formData);
@@ -168,7 +182,10 @@ const DisciplineModal = ({ isOpen, onClose, onSubmit, students }) => {
     e.preventDefault();
     if (!formData.studentId) { alert("لطفاً دانش‌آموز را انتخاب کنید"); return; }
     if (!formData.title.trim()) { alert("لطفاً عنوان را وارد کنید"); return; }
+    if (formData.title.trim().length < 3) { alert("عنوان باید حداقل 3 کاراکتر باشد"); return; }
     if (!formData.description.trim()) { alert("لطفاً توضیحات را وارد کنید"); return; }
+    if (formData.description.trim().length < 10) { alert("توضیحات باید حداقل 10 کاراکتر باشد"); return; }
+    if (formData.points !== 0 && (isNaN(Number(formData.points)) || Number(formData.points) < -100 || Number(formData.points) > 100)) { alert("امتیاز باید عددی بین -100 تا 100 باشد"); return; }
     setLoading(true);
     try {
       await onSubmit(formData);
@@ -213,6 +230,9 @@ const EducationalContentModal = ({ isOpen, onClose, onSubmit, initialData }) => 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.videoUrl.trim()) { alert("لطفاً عنوان و لینک ویدیو را وارد کنید"); return; }
+    if (formData.title.trim().length > 200) { alert("عنوان نباید بیشتر از 200 کاراکتر باشد"); return; }
+    try { new URL(formData.videoUrl); } catch { alert("لینک ویدیو معتبر نیست"); return; }
+    if (formData.description && formData.description.length > 1000) { alert("توضیحات نباید بیشتر از 1000 کاراکتر باشد"); return; }
     setLoading(true);
     try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); }
   };
@@ -260,14 +280,18 @@ const CreateQuizModal = ({ onClose, onSubmit, initialData = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) { 
-      alert('عنوان آزمون الزامی است'); 
-      return; 
+    if (!formData.title.trim()) {
+      alert('عنوان آزمون الزامی است');
+      return;
     }
+    if (formData.title.trim().length > 200) { alert('عنوان نباید بیشتر از 200 کاراکتر باشد'); return; }
+    if (!isPositiveNumber(formData.timeLimit) || Number(formData.timeLimit) > 600) { alert('زمان آزمون باید عددی بین 1 تا 600 دقیقه باشد'); return; }
+    if (!isPositiveNumber(formData.passingScore) || Number(formData.passingScore) > 100) { alert('نمره قبولی باید عددی بین 1 تا 100 باشد'); return; }
     if (formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
       alert('تاریخ پایان باید بعد از تاریخ شروع باشد');
       return;
     }
+    if (formData.description && formData.description.length > 1000) { alert('توضیحات نباید بیشتر از 1000 کاراکتر باشد'); return; }
     setLoading(true);
     try { 
       await onSubmit(formData); 
@@ -396,6 +420,9 @@ const EditQuizModal = ({ quiz, onClose, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) { alert('عنوان آزمون الزامی است'); return; }
+    if (formData.title.trim().length > 200) { alert('عنوان نباید بیشتر از 200 کاراکتر باشد'); return; }
+    if (!isPositiveNumber(formData.timeLimit) || Number(formData.timeLimit) > 600) { alert('زمان آزمون باید عددی بین 1 تا 600 دقیقه باشد'); return; }
+    if (!isPositiveNumber(formData.passingScore) || Number(formData.passingScore) > 100) { alert('نمره قبولی باید عددی بین 1 تا 100 باشد'); return; }
     setLoading(true);
     try { await onUpdate(quiz._id, formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); }
   };
@@ -475,9 +502,15 @@ const QuestionsModal = ({ quiz, onClose, onUpdate }) => {
   };
 
   const saveQuestions = async () => {
+    if (questions.length === 0) { alert('حداقل یک سوال باید وجود داشته باشد'); return; }
     for (const q of questions) {
       if (!q.question.trim()) { alert('لطفا متن تمام سوالات را وارد کنید'); return; }
-      if ((q.type === 'multiple_choice' || q.type === 'true_false') && !q.options.some(o => o.isCorrect)) { alert('لطفا برای هر سوال یک گزینه صحیح انتخاب کنید'); return; }
+      if (!isPositiveNumber(q.points) || Number(q.points) > 100) { alert('امتیاز هر سوال باید عددی بین 1 تا 100 باشد'); return; }
+      if ((q.type === 'multiple_choice' || q.type === 'true_false')) {
+        if (q.options.length < 2) { alert('هر سوال باید حداقل دو گزینه داشته باشد'); return; }
+        if (q.options.some(o => !o.text.trim())) { alert('متن تمام گزینه‌ها را وارد کنید'); return; }
+        if (!q.options.some(o => o.isCorrect)) { alert('لطفا برای هر سوال یک گزینه صحیح انتخاب کنید'); return; }
+      }
       if (q.type === 'short_answer' && !q.correctAnswer?.trim()) { alert('لطفا پاسخ صحیح سوالات کوتاه پاسخ را وارد کنید'); return; }
     }
     setSaving(true);

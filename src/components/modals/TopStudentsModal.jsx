@@ -1,7 +1,7 @@
 // components/modals/TopStudentsModal.jsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Download, Filter, Users, GraduationCap, School2, Award, Star, Image as ImageIcon } from "lucide-react";
 import html2canvas from "html2canvas";
@@ -17,13 +17,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
 
   const availableGrades = [...new Set(classes.map(c => c.grade).filter(Boolean))];
 
-  useEffect(() => {
-    if (isOpen && school) {
-      fetchTopStudents();
-    }
-  }, [isOpen, scope, selectedGrade, selectedClass]);
-
-  const fetchTopStudents = async () => {
+  const fetchTopStudents = useCallback(async () => {
     if (!school?._id) return;
     
     setLoading(true);
@@ -50,7 +44,13 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [school, academicYear, scope, selectedGrade, selectedClass]);
+
+  useEffect(() => {
+    if (isOpen && school) {
+      fetchTopStudents();
+    }
+  }, [isOpen, school, fetchTopStudents]);
 
   const downloadPoster = async () => {
     if (topStudents.length === 0) return;
