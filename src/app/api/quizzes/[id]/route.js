@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
         headers: { "Content-Type": "application/json" },
       });
     }
-    const quizId = params.id;
+    const { id: quizId } = await params;
     console.log("🔍 دریافت اطلاعات آزمون:", quizId);
     console.log("👤 کاربر جاری:", decoded.id);
     const quiz = await Quiz.findOne({
@@ -81,7 +81,7 @@ export async function PUT(request, { params }) {
         headers: { "Content-Type": "application/json" },
       });
     }
-    const quizId = params.id;
+    const { id: quizId } = await params;
     console.log("✏️ بروزرسانی آزمون:", quizId);
     console.log("👤 کاربر جاری:", decoded.id);
     const existingQuiz = await Quiz.findOne({
@@ -203,7 +203,7 @@ export async function DELETE(request, { params }) {
         headers: { "Content-Type": "application/json" },
       });
     }
-    const quizId = params.id;
+    const { id: quizId } = await params;
     console.log("🗑️ حذف آزمون:", quizId);
     console.log("👤 کاربر جاری:", decoded.id);
     const deletedQuiz = await Quiz.findOneAndDelete({

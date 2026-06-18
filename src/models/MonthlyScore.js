@@ -23,10 +23,18 @@ const monthlyScoreSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 monthlyScoreSchema.pre('save', function(next) {
-  const scores = Object.values(this.scores).filter(s => s !== null && s !== undefined);
-  if (scores.length > 0) {
-    this.average = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const scoreFields = ['oral', 'written', 'homework', 'activity', 'exam'];
+  const validScores = scoreFields
+    .map(k => this.scores?.[k])
+    .filter(s => s !== null && s !== undefined && s !== '');
+
+  if (validScores.length > 0) {
+    const sum = validScores.reduce((acc, val) => acc + Number(val), 0);
+    this.average = Number((sum / validScores.length).toFixed(2));
+  } else {
+    this.average = null;
   }
+
   next();
 });
 

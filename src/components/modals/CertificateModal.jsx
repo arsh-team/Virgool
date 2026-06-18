@@ -134,7 +134,13 @@ const CertificateModal = ({ isOpen, onClose, student, school, academicYear }) =>
 
   const downloadCertificate = async () => {
     if (!student) return;
-    
+    if (!signer.trim()) { alert('لطفاً نام امضاکننده را وارد کنید'); return; }
+    if (signer.trim().length > 80) { alert('نام امضاکننده نباید بیشتر از 80 کاراکتر باشد'); return; }
+    if (!date.trim()) { alert('لطفاً تاریخ را وارد کنید'); return; }
+    if (reason === 'competition' && !competitionName.trim()) { alert('لطفاً نام مسابقه را وارد کنید'); return; }
+    if (customText && customText.length > 300) { alert('متن سفارشی نباید بیشتر از 300 کاراکتر باشد'); return; }
+    if (competitionName && competitionName.length > 150) { alert('نام مسابقه نباید بیشتر از 150 کاراکتر باشد'); return; }
+
     setGenerating(true);
     try {
       const html = generateCertificateHtml();
@@ -165,6 +171,7 @@ const CertificateModal = ({ isOpen, onClose, student, school, academicYear }) =>
       link.click();
     } catch (error) {
       console.error("Error generating certificate:", error);
+      alert('خطا در تولید گواهینامه. لطفاً دوباره تلاش کنید.');
     } finally {
       setGenerating(false);
     }

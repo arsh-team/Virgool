@@ -34,6 +34,23 @@ export async function POST(request) {
     }
     const { productId, lessonId, progress, watchedDuration, totalDuration, videoCompleted } = await request.json();
     console.log("Updating progress:", { productId, lessonId, progress, watchedDuration, videoCompleted });
+
+    // Validate progress value
+    if (typeof progress !== 'number' || progress < 0 || progress > 100) {
+      return new Response(
+        JSON.stringify({ error: "مقدار پیشرفت نامعتبر است" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Video completion should only be set after sufficient progress
+    if (videoCompleted && progress < 90) {
+      return new Response(
+        JSON.stringify({ error: "پیشرفت نمی‌تواند کاهش یابد" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const lesson = await Lesson.findOne({ _id: lessonId });
     const lessonDuration = totalDuration || (lesson ? parseDuration(lesson.duration) * 60 : 0);
     const existingProgress = await UserProgress.findOne({
@@ -41,16 +58,21 @@ export async function POST(request) {
       product: productId,
       lesson: lessonId
     });
+
+    // For progress updates, ensure progress can only increase
+    if (existingProgress && progress < existingProgress.progress) {
+      return new Response(
+        JSON.stringify({ error: "پیشرفت نمی‌تواند کاهش یابد" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     let finalProgress = progress;
     let finalWatchedDuration = watchedDuration || 0;
     let finalVideoCompleted = videoCompleted || false;
     if (existingProgress) {
       console.log("Existing progress:", existingProgress.progress, "New progress:", progress);
       console.log("Existing watchedDuration:", existingProgress.watchedDuration, "New watchedDuration:", watchedDuration);
-      if (progress < existingProgress.progress && !videoCompleted) {
-        finalProgress = existingProgress.progress;
-        console.log("Keeping existing progress:", finalProgress);
-      }
       if (watchedDuration < existingProgress.watchedDuration && !videoCompleted) {
         finalWatchedDuration = existingProgress.watchedDuration;
         console.log("Keeping existing watched duration:", finalWatchedDuration);

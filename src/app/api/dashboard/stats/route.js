@@ -263,7 +263,7 @@ const learningVelocities = enrichedEnrollments.reduce((velocities, e) => {
       return status;
     }
     const points = completedCourses * 100 + inProgressCourses * 50;
-    const streak = Math.floor(Math.random() * 15) + 1;
+    const streak = 0; // TODO: Implement actual streak calculation from user activity data
     const productivityScore = Math.round(
       averageProgress * 0.4 + completedCourses * 20 + (totalCourses > 0 ? enrichedEnrollments.reduce((sum, e) => sum + (parseInt(e.product?.hours) || 0) * (e.progress / 100) * 60, 0) / 60 : 0) * 0.1
     );

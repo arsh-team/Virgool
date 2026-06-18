@@ -134,28 +134,41 @@ export async function GET(request, { params }) {
       );
     }
     
-    const startTime = new Date(attempt.startTime);
-    const elapsedSeconds = Math.floor((now - startTime) / 1000);
-    const timeLimitSeconds = quiz.timeLimit * 60;
-    const remainingSeconds = Math.max(0, timeLimitSeconds - elapsedSeconds);
+    // Calculate remaining time - use remainingTime for paused attempts
+    let remainingSeconds;
+    if (attempt.status === 'paused' && attempt.remainingTime !== undefined) {
+      remainingSeconds = attempt.remainingTime;
+    } else {
+      const startTime = new Date(attempt.startTime);
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const timeLimitSeconds = quiz.timeLimit * 60;
+      remainingSeconds = Math.max(0, timeLimitSeconds - elapsedSeconds);
+    }
+
     const isExpired = remainingSeconds === 0;
     
     if (isExpired && attempt.status === 'in_progress') {
-      attempt.status = 'expired';
-      attempt.endTime = now;
-      attempt.timeSpent = timeLimitSeconds;
-      await attempt.save();
-      
+      // Don't modify DB in GET - just indicate in response
       return new Response(
         JSON.stringify({
-          status: 'expired',
-          hasActiveAttempt: false,
+          quizStatus: 'in_progress',
+          hasActiveAttempt: true,
+          attemptId: attempt._id,
+          startTime: attempt.startTime,
+          status: attempt.status,
+          answersCount: attempt.answers.length,
+          totalQuestions: quiz.questions.length,
+          isExpired: true,
           expired: true,
           message: "زمان آزمون به پایان رسیده است"
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
+    
+    const startTime = new Date(attempt.startTime);
+    const elapsedSeconds = Math.floor((now - startTime) / 1000);
+    const timeLimitSeconds = quiz.timeLimit * 60;
     
     return new Response(
       JSON.stringify({

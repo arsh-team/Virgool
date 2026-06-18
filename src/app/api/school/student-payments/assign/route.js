@@ -9,6 +9,18 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../lib/auth";
 import mongoose from "mongoose";
 
+// Helper function to calculate the current Iranian academic year dynamically
+function getCurrentAcademicYear() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  // Iranian academic year typically starts in September (Shahrivar/Mehr)
+  // If we're before September, we're in the second half of the previous academic year
+  const isBeforeAcademicYear = now.getMonth() < 8; // Before September (0-indexed)
+  // Approximate Jalali year from Gregorian
+  const jalaliYear = isBeforeAcademicYear ? currentYear - 622 : currentYear - 621;
+  return `${jalaliYear}-${jalaliYear + 1}`;
+}
+
 async function authenticate(request) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -131,7 +143,7 @@ export async function POST(request) {
         let existingPayment = await StudentPayment.findOne({
           student: student._id,
           school: schoolId,
-          academicYear: academicYear || "1404-1405"
+          academicYear: academicYear || getCurrentAcademicYear()
         });
         
         const paymentItems = schoolFee.feeItems.map(feeItem => {
@@ -175,7 +187,7 @@ export async function POST(request) {
             class: studentClassId,
             school: schoolId,
             schoolFee: feeId,
-            academicYear: academicYear || "1404-1405",
+            academicYear: academicYear || getCurrentAcademicYear(),
             paymentItems: paymentItems,
             totalAmount: schoolFee.totalAmount,
             totalPaid: 0,

@@ -84,7 +84,7 @@ export async function PUT(request, { params }) {
     }
     const resolvedParams = await params;
     const serviceId = resolvedParams.id;
-    const _body = await request.json();
+    const body = await request.json();
     const service = await Service.findOne({
       _id: serviceId,
       $or: [
@@ -101,6 +101,12 @@ export async function PUT(request, { params }) {
         }
       );
     }
+
+    if (body.settings) {
+      service.settings = { ...service.settings, ...body.settings };
+      await service.save();
+    }
+
     return new Response(JSON.stringify({ settings: service.settings || {} }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

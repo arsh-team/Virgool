@@ -54,4 +54,15 @@ const walletSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+walletSchema.pre('save', function(next) {
+  // Limit transactions array to prevent hitting MongoDB 16MB document limit
+  const MAX_TRANSACTIONS = 1000;
+  if (this.transactions && this.transactions.length > MAX_TRANSACTIONS) {
+    // Keep only the most recent transactions
+    this.transactions = this.transactions.slice(-MAX_TRANSACTIONS);
+  }
+  next();
+});
+
 export default mongoose.models.Wallet || mongoose.model('Wallet', walletSchema);

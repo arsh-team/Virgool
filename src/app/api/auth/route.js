@@ -18,8 +18,11 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const body = sanitizeInput(await req.json());
-    const { mode, email, password, firstname, lastname, isInstitutionAccount } =
+    const rawBody = await req.json();
+    const { password, ...restBody } = rawBody;
+    const body = sanitizeInput(restBody);
+    body.password = password; // Use original password without sanitization
+    const { mode, email, firstname, lastname, isInstitutionAccount } =
       body;
 
     if (!email || !password) {
@@ -54,6 +57,7 @@ export async function POST(req) {
         );
       }
 
+      if (body.email) body.email = body.email.trim().toLowerCase();
       let existing = await User.findOne({ email });
       if (existing) {
         return new Response(
@@ -82,7 +86,7 @@ export async function POST(req) {
       await user.save();
 
       // ⚡ اصلاح زمان انقضا به یک بازه منطقی‌تر (مثلاً 6 ماه)
-      const token = jwt.sign({ id: user._id }, SECRET, { expiresIn: "180d" });
+      const token = jwt.sign({ id: user._id }, SECRET, { expiresIn: "7d" });
       return new Response(
         JSON.stringify({
           success: true,

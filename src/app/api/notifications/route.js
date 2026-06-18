@@ -1,5 +1,6 @@
 import { connectDB } from "../../../lib/db";
 import { getUserIdFromToken } from "../../../lib/auth";
+import User from "../../../models/User";
 import Notification from "../../../models/Notification";
 export async function GET(request) {
   try {
@@ -94,6 +95,16 @@ export async function POST(request) {
         JSON.stringify({ error: "توکن نامعتبر" }),
         { 
           status: 401, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    const requestingUser = await User.findById(userId).select('type').lean();
+    if (!requestingUser || (requestingUser.type !== 'creator' && requestingUser.type !== 'admin')) {
+      return new Response(
+        JSON.stringify({ error: "شما اجازه ایجاد اعلان ندارید" }),
+        { 
+          status: 403, 
           headers: { 'Content-Type': 'application/json' } 
         }
       );

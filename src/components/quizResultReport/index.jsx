@@ -1,9 +1,34 @@
 // components/quizResultReport/index.jsx
+import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { Trophy, Percent, Clock, Award, CheckCircle, XCircle } from 'lucide-react';
+
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const ScoreCard = ({ title, value, icon: Icon }) => (
+  <div className="bg-white rounded-2xl shadow-lg p-6 flex items-center gap-4">
+    <div className="p-3 bg-blue-100 rounded-xl">
+      <Icon className="w-6 h-6 text-blue-500" />
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className="text-xl font-bold text-gray-800">{value}</p>
+    </div>
+  </div>
+);
 
 const QuizResultReport = ({ result, quiz }) => {
   const [activeTab, setActiveTab] = useState('summary');
   
+  const cells = [
+    { name: 'درست', value: result.correctCount, color: '#10b981' },
+    { name: 'غلط', value: result.wrongCount, color: '#ef4444' }
+  ];
   
   const questionAnalysis = quiz.questions.map((q, idx) => ({
     number: idx + 1,
@@ -30,10 +55,7 @@ const QuizResultReport = ({ result, quiz }) => {
         <h3 className="text-xl font-bold mb-4">تحلیل کلی عملکرد</h3>
         <div className="flex flex-wrap gap-8 justify-center">
           <PieChart width={250} height={250}>
-            <Pie data={[
-              { name: 'درست', value: result.correctCount, color: '#10b981' },
-              { name: 'غلط', value: result.wrongCount, color: '#ef4444' }
-            ]} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
+            <Pie data={cells} dataKey="value" cx="50%" cy="50%" outerRadius={80}>
               {cells.map((entry, index) => <Cell key={index} fill={entry.color} />)}
             </Pie>
             <Tooltip />
@@ -76,3 +98,5 @@ const QuizResultReport = ({ result, quiz }) => {
     </div>
   );
 };
+
+export default QuizResultReport;
