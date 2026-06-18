@@ -1,6 +1,6 @@
 import { connectDB } from "../../../../lib/db";
 import Enrollment from "../../../../models/Enrollment";
-import Product from "../../../../models/Product";
+import Service from "../../../../models/Service";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 export async function POST(request) {
@@ -24,15 +24,15 @@ export async function POST(request) {
       );
     }
     const { productId } = await request.json();
-    console.log("Enrollment request for product:", productId); 
+    console.log("Enrollment request for service:", productId); 
     if (!productId) {
       return new Response(
         JSON.stringify({ error: "شناسه دوره ارسال نشده است" }), 
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    const product = await Product.findById(productId);
-    if (!product) {
+    const service = await Service.findById(productId);
+    if (!service) {
       return new Response(
         JSON.stringify({ error: "دوره مورد نظر یافت نشد" }), 
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -40,7 +40,7 @@ export async function POST(request) {
     }
     const existingEnrollment = await Enrollment.findOne({
       user: decoded.id,
-      product: productId
+      service: productId
     });
     if (existingEnrollment) {
       return new Response(
@@ -51,19 +51,21 @@ export async function POST(request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+    const amount = service.priceAfterDiscount !== undefined ? service.priceAfterDiscount : (service.price || 0);
     const enrollment = new Enrollment({
       user: decoded.id,
-      product: productId,
+      service: productId,
+      amount: amount,
       enrolledAt: new Date(),
       progress: 0,
       completed: false,
       lastAccessed: new Date()
     });
     await enrollment.save();
-    await Product.findByIdAndUpdate(productId, {
+    await Service.findByIdAndUpdate(productId, {
       $inc: { studentsCount: 1 }
     });
-    await enrollment.populate('product', 'title category level hours rating score teacher image');
+    await enrollment.populate('service', 'title category level rating price discountPercentage');
     await enrollment.populate('user', 'firstname lastname email');
     return new Response(
       JSON.stringify({ 

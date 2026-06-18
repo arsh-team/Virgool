@@ -19,6 +19,27 @@ import Header from "../../components/header";
 import ReportCardModal from "../../components/ReportCardModal";
 
 // ============================================
+// توابع کمکی اعتبارسنجی فرم‌ها
+// ============================================
+// الگوی شماره موبایل ایران: 09 و سپس 9 رقم
+const PHONE_REGEX = /^09\d{9}$/;
+// الگوی کدملی ایران: دقیقاً 10 رقم
+const NATIONAL_CODE_REGEX = /^\d{10}$/;
+// الگوی ایمیل استاندارد
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// اعتبارسنجی شماره موبایل (اختیاری - فقط اگر مقدار وارد شده باشد)
+const isValidPhone = (phone) => !phone || PHONE_REGEX.test(phone.trim());
+// اعتبارسنجی کدملی (اختیاری)
+const isValidNationalCode = (code) => !code || NATIONAL_CODE_REGEX.test(code.trim());
+// اعتبارسنجی ایمیل
+const isValidEmail = (email) => EMAIL_REGEX.test((email || "").trim());
+// اعتبارسنجی عدد مثبت
+const isPositiveNumber = (val) => { const n = Number(val); return val !== "" && val !== null && val !== undefined && !isNaN(n) && n > 0; };
+// اعتبارسنجی عدد صحیح مثبت
+const isPositiveInteger = (val) => { const n = Number(val); return val !== "" && val !== null && val !== undefined && !isNaN(n) && Number.isInteger(n) && n > 0; };
+
+// ============================================
 // مودال کلاس
 // ============================================
 const ClassModal = ({ isOpen, onClose, onSubmit, initialData, teachers, grades }) => {
@@ -61,6 +82,14 @@ const ClassModal = ({ isOpen, onClose, onSubmit, initialData, teachers, grades }
     e.preventDefault();
     if (!formData.name.trim() || !formData.grade || !formData.capacity) {
       alert("لطفاً نام کلاس، پایه و ظرفیت را وارد کنید");
+      return;
+    }
+    if (!isPositiveInteger(formData.capacity)) {
+      alert("ظرفیت کلاس باید یک عدد صحیح بزرگتر از صفر باشد");
+      return;
+    }
+    if (parseInt(formData.capacity) > 500) {
+      alert("ظرفیت کلاس نمی‌تواند بیشتر از 500 نفر باشد");
       return;
     }
     setLoading(true);
@@ -168,6 +197,8 @@ const SubjectModal = ({ isOpen, onClose, onSubmit, initialData, teachers, classe
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.code.trim() || !formData.teacherId) { alert("لطفاً نام درس، کد درس و دبیر را وارد کنید"); return; }
+    if (formData.classIds.length === 0) { alert("لطفاً حداقل یک کلاس مرتبط انتخاب کنید"); return; }
+    if (formData.hoursPerWeek !== "" && formData.hoursPerWeek !== null && formData.hoursPerWeek !== undefined) { if (!isPositiveNumber(formData.hoursPerWeek) || Number(formData.hoursPerWeek) > 24) { alert("ساعت در هفته باید عددی بین 1 تا 24 باشد"); return; } }
     setLoading(true);
     try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); }
   };
@@ -214,7 +245,7 @@ const TeacherModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
   const handleAddExpertise = () => { if (expertiseInput.trim() && !formData.expertise.includes(expertiseInput.trim())) { setFormData({ ...formData, expertise: [...formData.expertise, expertiseInput.trim()] }); setExpertiseInput(""); } };
   const handleRemoveExpertise = (item) => { setFormData({ ...formData, expertise: formData.expertise.filter(e => e !== item) }); };
-  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.firstname.trim() || !formData.lastname.trim() || !formData.email.trim()) { alert("لطفاً نام، نام خانوادگی و ایمیل را وارد کنید"); return; } setLoading(true); try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); } };
+  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.firstname.trim() || !formData.lastname.trim() || !formData.email.trim()) { alert("لطفاً نام، نام خانوادگی و ایمیل را وارد کنید"); return; } if (!isValidEmail(formData.email)) { alert("فرمت ایمیل صحیح نیست"); return; } if (!isValidPhone(formData.phone)) { alert("شماره تماس باید با 09 شروع شده و 11 رقم باشد"); return; } if (!isValidNationalCode(formData.nationalCode)) { alert("کدملی باید دقیقاً 10 رقم باشد"); return; } if (formData.yearsOfExperience !== "" && formData.yearsOfExperience !== null && formData.yearsOfExperience !== undefined) { const yoe = Number(formData.yearsOfExperience); if (isNaN(yoe) || yoe < 0 || yoe > 60) { alert("سال‌های تجربه باید عددی بین 0 تا 60 باشد"); return; } } setLoading(true); try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); } };
 
   if (!isOpen) return null;
 
@@ -261,7 +292,7 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData, classes }) => {
 
   const handleAddAllergy = () => { if (allergyInput.trim() && !formData.allergies.includes(allergyInput.trim())) { setFormData({ ...formData, allergies: [...formData.allergies, allergyInput.trim()] }); setAllergyInput(""); } };
   const handleRemoveAllergy = (item) => { setFormData({ ...formData, allergies: formData.allergies.filter(a => a !== item) }); };
-  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.firstname.trim() || !formData.lastname.trim() || !formData.email.trim()) { alert("لطفاً نام، نام خانوادگی و ایمیل را وارد کنید"); return; } setLoading(true); try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); } };
+  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.firstname.trim() || !formData.lastname.trim() || !formData.email.trim()) { alert("لطفاً نام، نام خانوادگی و ایمیل را وارد کنید"); return; } if (!isValidEmail(formData.email)) { alert("فرمت ایمیل صحیح نیست"); return; } if (!formData.enrolledClassId) { alert("لطفاً کلاس دانش‌آموز را انتخاب کنید"); return; } if (!isValidPhone(formData.phone)) { alert("شماره تماس باید با 09 شروع شده و 11 رقم باشد"); return; } if (!isValidNationalCode(formData.nationalCode)) { alert("کدملی باید دقیقاً 10 رقم باشد"); return; } if (formData.parentPhone && !isValidPhone(formData.parentPhone)) { alert("شماره والدین باید با 09 شروع شده و 11 رقم باشد"); return; } if (formData.emergencyContact && !isValidPhone(formData.emergencyContact)) { alert("شماره تماس اضطراری باید با 09 شروع شده و 11 رقم باشد"); return; } setLoading(true); try { await onSubmit(formData); onClose(); } catch (error) { console.error(error); } finally { setLoading(false); } };
 
   if (!isOpen) return null;
 
@@ -298,7 +329,7 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData, classes }) => {
 const DisciplineModal = ({ isOpen, onClose, onSubmit, students }) => {
   const [formData, setFormData] = useState({ studentId: "", type: "warning", title: "", description: "", severity: "medium", points: 0 });
   const [loading, setLoading] = useState(false);
-  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.studentId || !formData.title.trim() || !formData.description.trim()) { alert("لطفاً تمام فیلدهای الزامی را پر کنید"); return; } setLoading(true); try { await onSubmit(formData); onClose(); setFormData({ studentId: "", type: "warning", title: "", description: "", severity: "medium", points: 0 }); } catch (error) { console.error(error); } finally { setLoading(false); } };
+  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.studentId || !formData.title.trim() || !formData.description.trim()) { alert("لطفاً تمام فیلدهای الزامی را پر کنید"); return; } if (formData.title.trim().length < 3) { alert("عنوان باید حداقل 3 کاراکتر باشد"); return; } if (formData.description.trim().length < 10) { alert("توضیحات باید حداقل 10 کاراکتر باشد"); return; } if (formData.points !== 0 && (isNaN(Number(formData.points)) || Number(formData.points) < -100 || Number(formData.points) > 100)) { alert("امتیاز باید عددی بین -100 تا 100 باشد"); return; } setLoading(true); try { await onSubmit(formData); onClose(); setFormData({ studentId: "", type: "warning", title: "", description: "", severity: "medium", points: 0 }); } catch (error) { console.error(error); } finally { setLoading(false); } };
   if (!isOpen) return null;
   return (
     <AnimatePresence>
@@ -1442,6 +1473,12 @@ body{
       alert("لطفاً دانش‌آموز را انتخاب کنید");
       return;
     }
+    if (customFields.title && customFields.title.length > 100) { alert("عنوان لوح تقدیر نباید بیشتر از 100 کاراکتر باشد"); return; }
+    if (customFields.subtitle && customFields.subtitle.length > 150) { alert("عنوان فرعی نباید بیشتر از 150 کاراکتر باشد"); return; }
+    if (customFields.mainText && customFields.mainText.length > 300) { alert("متن اصلی نباید بیشتر از 300 کاراکتر باشد"); return; }
+    if (customFields.customMessage && customFields.customMessage.length > 500) { alert("پیام سفارشی نباید بیشتر از 500 کاراکتر باشد"); return; }
+    if (customFields.signatureName && customFields.signatureName.length > 80) { alert("نام امضاکننده نباید بیشتر از 80 کاراکتر باشد"); return; }
+    if (customFields.signatureTitle && customFields.signatureTitle.length > 80) { alert("سمت امضاکننده نباید بیشتر از 80 کاراکتر باشد"); return; }
 
     const size = paperSizes.find((s) => s.id === selectedSize) || paperSizes[0];
     const PX = 3.7795;
@@ -1885,13 +1922,16 @@ const FeeModal = ({ isOpen, onClose, onSubmit, initialData, classes }) => {
   useEffect(() => {
     if (initialData) {
       setFormData({ name: initialData.name || "", feeItems: initialData.feeItems?.length ? initialData.feeItems.map(item => ({ name: item.name, amount: item.amount, isRequired: item.isRequired !== false, description: item.description || "" })) : [{ name: "", amount: "", isRequired: true, description: "" }], applyToAllClasses: initialData.applyToAllClasses !== false, classIds: initialData.classIds?.map(c => c._id || c) || [], paymentTerms: initialData.paymentTerms || "monthly", numberOfInstallments: initialData.numberOfInstallments || 9 });
+    } else {
+      setFormData({ name: "", feeItems: [{ name: "", amount: "", isRequired: true, description: "" }], applyToAllClasses: true, classIds: [], paymentTerms: "monthly", numberOfInstallments: 9 });
     }
+    setError("");
   }, [initialData]);
 
   const addFeeItem = () => { setFormData({ ...formData, feeItems: [...formData.feeItems, { name: "", amount: "", isRequired: true, description: "" }] }); };
   const removeFeeItem = (index) => { if (formData.feeItems.length === 1) { setError("حداقل یک آیتم شهریه باید وجود داشته باشد"); return; } const newItems = [...formData.feeItems]; newItems.splice(index, 1); setFormData({ ...formData, feeItems: newItems }); setError(""); };
   const updateFeeItem = (index, field, value) => { const newItems = [...formData.feeItems]; newItems[index][field] = value; setFormData({ ...formData, feeItems: newItems }); };
-  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.name.trim()) { setError("لطفاً نام تعرفه را وارد کنید"); return; } const invalidItems = formData.feeItems.filter(item => !item.name.trim() || !item.amount); if (invalidItems.length > 0) { setError("لطفاً نام و مبلغ تمام آیتم های شهریه را وارد کنید"); return; } setLoading(true); setError(""); try { await onSubmit(formData); onClose(); } catch (err) { setError(err.message); } finally { setLoading(false); } };
+  const handleSubmit = async (e) => { e.preventDefault(); if (!formData.name.trim()) { setError("لطفاً نام تعرفه را وارد کنید"); return; } const invalidItems = formData.feeItems.filter(item => !item.name.trim() || !item.amount); if (invalidItems.length > 0) { setError("لطفاً نام و مبلغ تمام آیتم های شهریه را وارد کنید"); return; } const invalidAmounts = formData.feeItems.filter(item => !isPositiveNumber(item.amount)); if (invalidAmounts.length > 0) { setError("مبلغ هر آیتم شهریه باید عددی بزرگتر از صفر باشد"); return; } if (!formData.applyToAllClasses && formData.classIds.length === 0) { setError("لطفاً حداقل یک کلاس انتخاب کنید یا گزینه «همه کلاس‌ها» را فعال کنید"); return; } const noi = Number(formData.numberOfInstallments); if (isNaN(noi) || noi < 1 || noi > 12 || !Number.isInteger(noi)) { setError("تعداد اقساط باید عدد صحیح بین 1 تا 12 باشد"); return; } setLoading(true); setError(""); try { await onSubmit(formData); onClose(); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   if (!isOpen) return null;
   return (
     <AnimatePresence>
@@ -1961,8 +2001,28 @@ const PaymentModal = ({ isOpen, onClose, onSubmit, studentPayment, formatCurrenc
       return;
     }
     
+    if (isNaN(parseFloat(amount))) {
+      setError("مبلغ پرداختی باید عدد باشد");
+      return;
+    }
+
+    if (parseFloat(amount) > 1000000000) {
+      setError("مبلغ پرداختی بیش از حد مجاز است");
+      return;
+    }
+    
     if (parseFloat(amount) > studentPayment?.totalRemaining) {
       setError(`مبلغ پرداختی نمی تواند بیشتر از مبلغ باقی مانده (${formatCurrency(studentPayment.totalRemaining)}) باشد`);
+      return;
+    }
+
+    if (methodDetails && methodDetails.length > 500) {
+      setError("جزئیات روش پرداخت نباید بیشتر از 500 کاراکتر باشد");
+      return;
+    }
+
+    if (description && description.length > 500) {
+      setError("توضیحات نباید بیشتر از 500 کاراکتر باشد");
       return;
     }
     
@@ -2388,14 +2448,14 @@ export default function SchoolManagement() {
   useEffect(() => { if (school) { fetchClasses(); fetchSubjects(); fetchTeachers(); fetchStudents(); fetchDisciplines(); fetchSubscriptionLimits(); } }, [school]);
   useEffect(() => { if (school) fetchTopStudentsReport(); }, [school, academicYear, reportScope, reportClassId, reportGrade, reportLimit]);
   useEffect(() => { if (school && !initialLoadDone.current) { initialLoadDone.current = true; fetchSchoolFees(); fetchStudentPayments(); fetchPaymentReceipts(); } }, [school]);
-  useEffect(() => { if (initialLoadDone.current && school) { if (financeFilterTimeout.current) clearTimeout(financeFilterTimeout.current); financeFilterTimeout.current = setTimeout(() => { fetchStudentPayments(); if (selectedStudentForFinance) fetchPaymentReceipts(); }, 300); } return () => { if (financeFilterTimeout.current) clearTimeout(financeFilterTimeout.current); }; }, [selectedClassForFinance, selectedStudentForFinance]);
+  useEffect(() => { if (initialLoadDone.current && school) { if (financeFilterTimeout.current) clearTimeout(financeFilterTimeout.current); financeFilterTimeout.current = setTimeout(() => { fetchStudentPayments(); fetchPaymentReceipts(); }, 300); } return () => { if (financeFilterTimeout.current) clearTimeout(financeFilterTimeout.current); }; }, [selectedClassForFinance, selectedStudentForFinance]);
   
   const handleCreateClass = async (classData) => { try { const token = localStorage.getItem("token"); let res; if (editingItem && editingItem._id) { res = await fetch(`/api/school/classes?id=${editingItem._id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...classData, schoolId: school._id }) }); } else { res = await fetch(`/api/school/classes`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...classData, schoolId: school._id }) }); } if (res.ok) { await fetchClasses(); await fetchTeachers(); await fetchStudents(); setShowClassModal(false); setEditingItem(null); setSuccess(editingItem ? "کلاس با موفقیت ویرایش شد" : "کلاس با موفقیت ایجاد شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ایجاد کلاس"); setTimeout(() => setError(""), 5000); } };
   const handleCreateSubject = async (subjectData) => { try { const token = localStorage.getItem("token"); let res; if (editingItem && editingItem._id) { res = await fetch(`/api/school/subjects?id=${editingItem._id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...subjectData, schoolId: school._id }) }); } else { res = await fetch(`/api/school/subjects`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...subjectData, schoolId: school._id }) }); } if (res.ok) { await fetchSubjects(); await fetchTeachers(); setShowSubjectModal(false); setEditingItem(null); setSuccess(editingItem ? "درس با موفقیت ویرایش شد" : "درس با موفقیت ایجاد شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ایجاد درس"); setTimeout(() => setError(""), 5000); } };
   const handleCreateTeacher = async (teacherData) => { try { const token = localStorage.getItem("token"); let res; if (editingItem && editingItem._id) { res = await fetch(`/api/school/users?id=${editingItem._id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...teacherData, schoolId: school._id, role: "teacher" }) }); } else { res = await fetch(`/api/school/users`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...teacherData, schoolId: school._id, role: "teacher" }) }); } if (res.ok) { await fetchTeachers(); await fetchClasses(); setShowTeacherModal(false); setEditingItem(null); setSuccess(editingItem ? "دبیر با موفقیت ویرایش شد" : "دبیر با موفقیت ثبت شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ثبت دبیر"); setTimeout(() => setError(""), 5000); } };
   const handleCreateStudent = async (studentData) => { try { const token = localStorage.getItem("token"); let res; if (editingItem && editingItem._id) { res = await fetch(`/api/school/users?id=${editingItem._id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...studentData, schoolId: school._id, role: "student" }) }); } else { res = await fetch(`/api/school/users`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...studentData, schoolId: school._id, role: "student" }) }); } if (res.ok) { await fetchStudents(); await fetchClasses(); setShowStudentModal(false); setEditingItem(null); setSelectedStudent(null); setSuccess(editingItem ? "دانش آموز با موفقیت ویرایش شد" : "دانش آموز با موفقیت ثبت شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ثبت دانش آموز"); setTimeout(() => setError(""), 5000); } };
   const handleCreateDiscipline = async (disciplineData) => { try { const token = localStorage.getItem("token"); const res = await fetch(`/api/school/discipline`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...disciplineData, schoolId: school._id }) }); if (res.ok) { await fetchDisciplines(); setShowDisciplineModal(false); setSuccess("مورد انضباطی با موفقیت ثبت شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ثبت مورد انضباطی"); setTimeout(() => setError(""), 5000); } };
-  const handleCreateFee = async (feeData) => { try { const token = localStorage.getItem("token"); const res = await fetch(`/api/school/fees`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...feeData, schoolId: school._id, academicYear }) }); if (res.ok) { await fetchSchoolFees(); setShowFeeModal(false); setEditingFee(null); setSuccess("تعرفه شهریه با موفقیت ثبت شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ثبت تعرفه شهریه"); setTimeout(() => setError(""), 5000); } };
+  const handleCreateFee = async (feeData) => { try { const token = localStorage.getItem("token"); const isEditing = editingFee && editingFee._id; const res = await fetch(isEditing ? `/api/school/fees?id=${editingFee._id}` : `/api/school/fees`, { method: isEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...feeData, schoolId: school._id, academicYear }) }); if (res.ok) { await fetchSchoolFees(); setShowFeeModal(false); setEditingFee(null); setSuccess(isEditing ? "تعرفه شهریه با موفقیت ویرایش شد" : "تعرفه شهریه با موفقیت ثبت شد"); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error); setTimeout(() => setError(""), 5000); } } catch (err) { setError("خطا در ثبت تعرفه شهریه"); setTimeout(() => setError(""), 5000); } };
   
   const assignFeeToStudents = async () => { if (!selectedFeeForAssignment) { setError("لطفاً یک تعرفه شهریه انتخاب کنید"); return; } if (!selectedClassForFinance && !selectedStudentForFinance) { setError("لطفاً یک کلاس یا دانش آموز را انتخاب کنید"); return; } setIsAssigningFee(true); try { const token = localStorage.getItem("token"); const res = await fetch(`/api/school/student-payments/assign`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ schoolId: school._id, feeId: selectedFeeForAssignment, classId: selectedClassForFinance, studentId: selectedStudentForFinance, academicYear: academicYear }) }); if (res.ok) { const data = await res.json(); setSuccess(`${data.assignedCount || 0} دانش آموز با موفقیت ثبت شدند`); await fetchStudentPayments(); setTimeout(() => setSuccess(""), 3000); } else { const errorData = await res.json(); setError(errorData.error || "خطا در ثبت وضعیت مالی"); setTimeout(() => setError(""), 5000); } } catch (err) { console.error(err); setError("خطا در ثبت وضعیت مالی دانش آموزان"); setTimeout(() => setError(""), 5000); } finally { setIsAssigningFee(false); } };
   
@@ -2462,8 +2522,8 @@ export default function SchoolManagement() {
   const getReportScopeLabel = () => { if (reportScope === "class") { const selected = classes.find(c => c._id === reportClassId); return selected ? `${selected.name} - پایه ${selected.grade}` : "کلاس انتخاب شده"; } if (reportScope === "grade") return reportGrade ? `پایه ${reportGrade}` : "پایه انتخاب شده"; return school?.title || "کل مدرسه"; };
   const getStudentClassLabel = (student) => student?.classes?.[0] ? `${student.classes[0].name} - پایه ${student.classes[0].grade}` : (student?.studentInfo?.enrolledClass?.name || "-");
   const exportTopStudentsToCSV = async () => { const headers = ["رتبه", "نام", "نام خانوادگی", "کلاس", "میانگین کل", "بهترین نمره", "تعداد نمره", "تعداد درس"]; const rows = topStudents.map((student, idx) => [idx + 1, student.firstname || "", student.lastname || "", getStudentClassLabel(student), student.totalAverage ?? "-", student.bestScore ?? "-", student.scoreCount || 0, student.subjectCount || 0]); const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n"); const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.href = url; link.setAttribute("download", `top_students_${getReportScopeLabel()}_${academicYear}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); setSuccess("خروجی CSV دانش آموزان برتر دانلود شد"); setTimeout(() => setSuccess(""), 3000); };
-  const renderCertificateHtml = (student) => `<div style="width: 1120px; min-height: 790px; box-sizing: border-box; padding: 54px; direction: rtl; font-family: vazir, Tahoma, sans-serif; background: linear-gradient(135deg, #fffdf5 0%, #ffffff 54%, #eef8ff 100%); color: #1f2937;"><div style="min-height: 680px; border: 8px double #d4af37; border-radius: 26px; padding: 48px; text-align: center; position: relative;"><div style="position:absolute; inset: 18px; border: 1px solid #97abff; border-radius: 18px;"></div><div style="position:relative;"><div style="font-size: 24px; color:#4563c2; font-weight: 800;">${school?.title || "مدرسه"}</div><div style="margin: 28px auto 14px; width: 92px; height: 92px; border-radius: 999px; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #b45309; font-size: 50px;">★</div><h1 style="font-size: 58px; margin: 10px 0; color:#92400e;">لوح تقدیر</h1><p style="font-size: 24px; line-height: 2.1; max-width: 820px; margin: 28px auto;">بدین وسیله از تلاش ارزشمند و عملکرد درخشان دانش آموز عزیز</p><div style="font-size: 48px; font-weight: 900; color:#111827; margin: 12px 0;">${student?.firstname || ""} ${student?.lastname || ""}</div><p style="font-size: 24px; line-height: 2.1; max-width: 860px; margin: 28px auto;">به عنوان دانش آموز برتر ${getReportScopeLabel()} در سال تحصیلی ${academicYear} با میانگین ${student?.totalAverage ?? "-"} تقدیر و تشکر می شود.</p><div style="display:flex; justify-content: space-between; align-items:flex-end; margin-top: 70px; font-size: 18px;"><div>تاریخ صدور<br/><strong>${new Date().toLocaleDateString("fa-IR")}</strong></div><div style="min-width: 220px; border-top: 2px solid #475569; padding-top: 12px;">مهر و امضای مدرسه</div></div></div></div></div>`;
-  const downloadHtmlAsPdf = async (html, fileName, orientation = "portrait") => { const { default: jsPDF } = await import('jspdf'); const div = document.createElement('div'); div.style.position = 'absolute'; div.style.left = '-9999px'; div.style.top = '-9999px'; div.style.backgroundColor = 'white'; div.innerHTML = html; document.body.appendChild(div); try { setLoading(true); const canvas = await html2canvas(div.firstElementChild || div, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true }); const imgData = canvas.toDataURL('image/png'); const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' }); const pageWidth = orientation === "landscape" ? 297 : 210; const pageHeight = orientation === "landscape" ? 210 : 297; const imgHeight = (canvas.height * pageWidth) / canvas.width; let heightLeft = imgHeight; let position = 0; doc.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight); heightLeft -= pageHeight; while (heightLeft > 0) { position = heightLeft - imgHeight; doc.addPage(); doc.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight); heightLeft -= pageHeight; } doc.save(fileName); } finally { document.body.removeChild(div); setLoading(false); } };
+  const renderCertificateHtml = (student) => `<div style="width: 900px; min-height: 620px; box-sizing: border-box; padding: 40px; direction: rtl; font-family: 'Vazir', Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #fffdf5 0%, #ffffff 54%, #eef8ff 100%); color: #1f2937;"><style>@font-face { font-family: 'Vazir'; src: url('/fonts/Vazir-Medium.ttf') format('truetype'); font-weight: normal; font-display: swap; }</style><div style="min-height: 540px; border: 6px double #d4af37; border-radius: 20px; padding: 36px; text-align: center; position: relative;"><div style="position:absolute; inset: 14px; border: 1px solid #97abff; border-radius: 14px;"></div><div style="position:relative;"><div style="font-size: 20px; color:#4563c2; font-weight: 800; margin-bottom: 8px;">${school?.title || "مدرسه"}</div><div style="margin: 16px auto 10px; width: 72px; height: 72px; border-radius: 999px; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #b45309; font-size: 40px; line-height: 1;">★</div><h1 style="font-size: 44px; margin: 8px 0; color:#92400e; line-height: 1.3;">لوح تقدیر</h1><p style="font-size: 18px; line-height: 2; max-width: 700px; margin: 18px auto;">بدین وسیله از تلاش ارزشمند و عملکرد درخشان دانش آموز عزیز</p><div style="font-size: 36px; font-weight: 900; color:#111827; margin: 10px 0; line-height: 1.4;">${student?.firstname || ""} ${student?.lastname || ""}</div><p style="font-size: 18px; line-height: 2; max-width: 700px; margin: 18px auto;">به عنوان دانش آموز برتر ${getReportScopeLabel()} در سال تحصیلی ${academicYear} با میانگین ${student?.totalAverage ?? "-"} تقدیر و تشکر می شود.</p><div style="display:flex; justify-content: space-between; align-items:flex-end; margin-top: 40px; font-size: 15px;"><div>تاریخ صدور<br/><strong>${new Date().toLocaleDateString("fa-IR")}</strong></div><div style="min-width: 180px; border-top: 2px solid #475569; padding-top: 10px;">مهر و امضای مدرسه</div></div></div></div></div>`;
+  const downloadHtmlAsPdf = async (html, fileName, orientation = "portrait") => { const { default: jsPDF } = await import('jspdf'); const div = document.createElement('div'); div.style.position = 'absolute'; div.style.left = '-9999px'; div.style.top = '-9999px'; div.style.backgroundColor = 'white'; div.style.direction = 'rtl'; div.innerHTML = html; document.body.appendChild(div); try { setLoading(true); await new Promise(r => setTimeout(r, 200)); const canvas = await html2canvas(div.firstElementChild || div, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true, allowTaint: true }); const imgData = canvas.toDataURL('image/png'); const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' }); const pageWidth = orientation === "landscape" ? 297 : 210; const pageHeight = orientation === "landscape" ? 210 : 297; const margin = 5; const contentWidth = pageWidth - 2 * margin; const imgHeight = (canvas.height * contentWidth) / canvas.width; let position = margin; doc.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight); let heightLeft = imgHeight - (pageHeight - 2 * margin); while (heightLeft > 0) { position = margin + heightLeft - imgHeight; doc.addPage(); doc.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight); heightLeft -= (pageHeight - 2 * margin); } doc.save(fileName); } finally { document.body.removeChild(div); setLoading(false); } };
   const downloadTopStudentsReport = async () => { if (topStudents.length === 0) { setError("برای این بازه دانش آموز برتری یافت نشد"); setTimeout(() => setError(""), 3000); return; } const rows = topStudents.map((student, idx) => `<tr><td style="padding:8px; border:1px solid #ddd;">${idx + 1}</td><td style="padding:8px; border:1px solid #ddd;">${student.firstname || ""} ${student.lastname || ""}</td><td style="padding:8px; border:1px solid #ddd;">${getStudentClassLabel(student)}</td><td style="padding:8px; border:1px solid #ddd;">${student.totalAverage ?? "-"}</td><td style="padding:8px; border:1px solid #ddd;">${student.bestScore ?? "-"}</td><td style="padding:8px; border:1px solid #ddd;">${student.scoreCount || 0}</td></tr>`).join(""); const html = `<div style="width: 900px; padding: 34px; direction: rtl; font-family: vazir, Tahoma, sans-serif; background: white; color: #111827;"><div style="text-align:center; margin-bottom: 28px;"><h1 style="color:#3d58ad; margin: 0 0 10px;">گزارش دانش آموزان برتر</h1><p>مدرسه: ${school?.title || ""}</p><p>محدوده: ${getReportScopeLabel()} | سال تحصیلی: ${academicYear}</p><p>تاریخ تولید: ${new Date().toLocaleDateString("fa-IR")}</p></div><table style="width:100%; border-collapse:collapse; font-size:14px;"><thead><tr style="background:#4563c2; color:white;"><th style="padding:12px; border:1px solid #dde5ff;">رتبه</th><th style="padding:12px; border:1px solid #dde5ff;">دانش آموز</th><th style="padding:12px; border:1px solid #dde5ff;">کلاس</th><th style="padding:12px; border:1px solid #dde5ff;">میانگین کل</th><th style="padding:12px; border:1px solid #dde5ff;">بهترین نمره</th><th style="padding:12px; border:1px solid #dde5ff;">تعداد نمره</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top: 26px; text-align:center; color:#64748b; font-size:12px;">این گزارش بر اساس نمرات ماهانه ثبت شده تولید شده است.</div></div>`; try { await downloadHtmlAsPdf(html, `top_students_report_${academicYear}.pdf`); setSuccess("گزارش دانش آموزان برتر دانلود شد"); setTimeout(() => setSuccess(""), 3000); } catch (err) { console.error(err); setError("خطا در تولید گزارش PDF"); setTimeout(() => setError(""), 3000); } };
   const downloadCertificate = async (student) => { if (!student) return; try { await downloadHtmlAsPdf(renderCertificateHtml(student), `certificate_${student.firstname || ""}_${student.lastname || ""}_${academicYear}.pdf`, "landscape"); setSuccess("لوح تقدیر دانلود شد"); setTimeout(() => setSuccess(""), 3000); } catch (err) { console.error(err); setError("خطا در تولید لوح تقدیر"); setTimeout(() => setError(""), 3000); } };
   

@@ -1,5 +1,6 @@
 // app/api/public/quiz/[slug]/save-progress/route.js
 import { connectDB } from "../../../../../../lib/db";
+import Quiz from "../../../../../../models/Quiz";
 import Attempt from "../../../../../../models/Attempt";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../../../lib/auth";
@@ -47,6 +48,21 @@ export async function POST(request, { params }) {
       );
     }
     
+    // Fetch quiz for server-side validation
+    const quiz = await Quiz.findById(slug);
+    if (!quiz) {
+      return new Response(
+        JSON.stringify({ error: "آزمون یافت نشد" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Build a map of questions for server-side question text lookup
+    const questionsMap = new Map();
+    quiz.questions.forEach(q => {
+      questionsMap.set(q._id.toString(), q);
+    });
+    
     // Update answers
     if (answers && answers.length > 0) {
       for (const answer of answers) {
@@ -60,7 +76,7 @@ export async function POST(request, { params }) {
         } else {
           attempt.answers.push({
             questionId: answer.questionId,
-            question: answer.question,
+            question: questionsMap.get(answer.questionId)?.question || answer.question,
             userAnswer: answer.userAnswer,
             answeredAt: new Date()
           });
@@ -68,9 +84,14 @@ export async function POST(request, { params }) {
       }
     }
     
-    // Update remaining time if paused
+    // Calculate remaining time server-side instead of trusting client
+    const startTime = new Date(attempt.startTime);
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    const timeLimitSeconds = (quiz.timeLimit || 30) * 60;
+    const serverRemainingTime = Math.max(0, timeLimitSeconds - elapsedSeconds);
+    attempt.remainingTime = serverRemainingTime;
+    
     if (remainingTime !== undefined) {
-      attempt.remainingTime = remainingTime;
       attempt.status = 'paused';
     }
     

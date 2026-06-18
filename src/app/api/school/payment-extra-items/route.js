@@ -41,6 +41,13 @@ export async function GET(request) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
     }
     
+    // Verify the requesting user belongs to the specified school
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === schoolId;
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به اطلاعات این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     const extraItems = await PaymentExtraItem.find({ school: schoolId }).sort({ createdAt: -1 });
     
     return Response.json({ extraItems }, {
@@ -70,6 +77,13 @@ export async function POST(request) {
     
     if (!schoolId || !name) {
       return Response.json({ error: "نام آیتم الزامی است" }, { status: 400 });
+    }
+    
+    // Verify the requesting user belongs to the specified school
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === schoolId;
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ثبت آیتم در این مدرسه را ندارید" }, { status: 403 });
     }
     
     const extraItem = new PaymentExtraItem({
@@ -113,10 +127,18 @@ export async function DELETE(request) {
       return Response.json({ error: "شناسه آیتم نامعتبر است" }, { status: 400 });
     }
     
-    const item = await PaymentExtraItem.findByIdAndDelete(itemId);
+    // Verify the item belongs to the user's school before deleting
+    const item = await PaymentExtraItem.findById(itemId);
     if (!item) {
       return Response.json({ error: "آیتم یافت نشد" }, { status: 404 });
     }
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === item.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف آیتم این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await PaymentExtraItem.findByIdAndDelete(itemId);
     
     return Response.json({ message: "آیتم با موفقیت حذف شد" });
   } catch (error) {

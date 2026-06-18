@@ -8,6 +8,18 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 import mongoose from "mongoose";
 
+// Helper function to calculate the current Iranian academic year dynamically
+function getCurrentAcademicYear() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  // Iranian academic year typically starts in September (Shahrivar/Mehr)
+  // If we're before September, we're in the second half of the previous academic year
+  const isBeforeAcademicYear = now.getMonth() < 8; // Before September (0-indexed)
+  // Approximate Jalali year from Gregorian
+  const jalaliYear = isBeforeAcademicYear ? currentYear - 622 : currentYear - 621;
+  return `${jalaliYear}-${jalaliYear + 1}`;
+}
+
 async function authenticate(request) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -174,6 +186,13 @@ export async function POST(request) {
       return Response.json({ error: "خطا در تخصیص مبلغ به آیتم‌های شهریه" }, { status: 400 });
     }
     
+    // TODO: IMPORTANT - The payment processing below (updating StudentPayment and creating PaymentReceipt)
+    // is NOT atomic. These two operations should be wrapped in a database transaction to ensure data
+    // consistency. If the receipt creation fails after the payment items are updated, the data will be
+    // in an inconsistent state. Use MongoDB sessions/transactions to fix this:
+    // const session = await mongoose.startSession();
+    // session.startTransaction();
+    // try { ... await session.commitTransaction(); } catch { await session.abortTransaction(); }
     studentPayment.paymentItems = updatedPaymentItems;
     await studentPayment.save();
     
@@ -199,7 +218,7 @@ export async function POST(request) {
       school: schoolId,
       schoolName: schoolName,
       studentPaymentId: studentPaymentId,
-      academicYear: "1404-1405",
+      academicYear: formData.get("academicYear") || getCurrentAcademicYear(),
       amount: amount,
       paymentItems: paymentItemsRecord,
       paymentMethod: paymentMethod,

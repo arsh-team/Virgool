@@ -88,7 +88,7 @@ const quizSchema = new mongoose.Schema({
   },
   classId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'class'
+    ref: 'Class'
   },
   startDate: {
     type: Date,
@@ -106,7 +106,7 @@ const quizSchema = new mongoose.Schema({
   },
   showCorrectAnswers: {
     type: Boolean,
-    default: true
+    default: false
   },
   showDetailedReport: {
     type: Boolean,

@@ -1,6 +1,6 @@
 import { connectDB } from "../../../../lib/db";
 import Enrollment from "../../../../models/Enrollment";
-import Product from "../../../../models/Product";
+import Service from "../../../../models/Service";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 export async function POST(request) {
@@ -47,33 +47,35 @@ export async function POST(request) {
     const results = [];
     for (const productId of productIds) {
       try {
-        console.log(`Processing product: ${productId}`);
-        const product = await Product.findOne({ _id: String(productId) });
-        if (!product) {
-          console.log(`Product not found: ${productId}`);
+        console.log(`Processing service: ${productId}`);
+        const service = await Service.findOne({ _id: String(productId) });
+        if (!service) {
+          console.log(`Service not found: ${productId}`);
           results.push({ productId, success: false, error: "دوره یافت نشد" });
           continue;
         }
-        console.log(`Found product: ${product.title}`);
+        console.log(`Found service: ${service.title}`);
         const existingEnrollment = await Enrollment.findOne({
           user: decoded.id,
-          product: String(productId)
+          service: String(productId)
         });
         if (existingEnrollment) {
           results.push({ productId, success: false, error: "قبلاً ثبت‌نام کرده‌اید" });
           continue;
         }
+        const amount = service.priceAfterDiscount !== undefined ? service.priceAfterDiscount : (service.price || 0);
         const enrollment = new Enrollment({
           user: decoded.id,
-          product: String(productId),
+          service: String(productId),
+          amount: amount,
           enrolledAt: new Date(),
           progress: 0,
           completed: false,
           lastAccessed: new Date()
         });
         await enrollment.save();
-        console.log(`Enrollment created for: ${product.title}`);
-        await Product.findOneAndUpdate(
+        console.log(`Enrollment created for: ${service.title}`);
+        await Service.findOneAndUpdate(
           { _id: String(productId) }, 
           { $inc: { studentsCount: 1 } }
         );
@@ -81,10 +83,10 @@ export async function POST(request) {
           productId, 
           success: true, 
           message: "ثبت‌نام موفق",
-          productTitle: product.title
+          productTitle: service.title
         });
       } catch (error) {
-        console.error(`Error enrolling in product ${productId}:`, error);
+        console.error(`Error enrolling in service ${productId}:`, error);
         results.push({ 
           productId, 
           success: false, 

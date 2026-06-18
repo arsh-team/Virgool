@@ -13,7 +13,7 @@ import {
   BellIcon
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function BottomNav() {
@@ -138,17 +138,17 @@ export default function BottomNav() {
     }
   };
 
-  var menuItems;
   const menuMap = {
     student: studentMenu,
     teacher: teacherMenu,
   };
 
-  menuItems = user?.type == "creator" ? creatorMenu : menuMap[user?.schoolRole] || [];
+  const menuItems = user?.type === "creator" ? creatorMenu : menuMap[user?.schoolRole] || [];
+
+  const searchParams = useSearchParams();
 
   const isActiveLink = (item) => {
     if (item.tab) {
-      const searchParams = new URLSearchParams(window.location.search);
       const currentTab = searchParams.get("tab");
       return pathname === item.href && currentTab === item.tab;
     }

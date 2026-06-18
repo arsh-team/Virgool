@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
-  const perpage = searchParams.get("perpage") || "5";
+  let perpage = parseInt(searchParams.get("perpage") || "5");
+  if (isNaN(perpage) || perpage < 1) perpage = 5;
+  if (perpage > 30) perpage = 30;
 
   if (!query) {
     return NextResponse.json({ error: "Query parameter is required" }, { status: 400 });

@@ -30,6 +30,11 @@ export async function GET(request) {
       return Response.json({ error: auth.error }, { status: auth.status });
     }
     
+    const requestingUser = await User.findById(auth.userId);
+    if (!requestingUser) {
+      return Response.json({ error: "کاربر یافت نشد" }, { status: 404 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const schoolId = searchParams.get("schoolId");
     const grade = searchParams.get("grade");
@@ -39,14 +44,21 @@ export async function GET(request) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
     }
     
+    // Verify the requesting user belongs to the specified school
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === schoolId;
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به اطلاعات این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     let query = { school: schoolId };
     if (grade) query.grade = grade;
-    if (isActive !== null) query.isActive = isActive === "true";
+    if (isActive !== null && isActive !== "") query.isActive = isActive === "true";
     
     const classes = await Class.find(query)
       .populate("teacher", "firstname lastname email phone")
       .populate("assistantTeacher", "firstname lastname email phone")
-      .populate("students", "firstname lastname email phone nationalCode")
+      .populate("students", "firstname lastname email phone")
       .lean();
     
     return Response.json({ classes });
@@ -164,6 +176,13 @@ export async function PUT(request) {
       return Response.json({ error: "کلاس یافت نشد" }, { status: 404 });
     }
     
+    // Verify the class belongs to the requesting user's school
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === existingClass.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش کلاس این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     // Prepare update data with proper ObjectId handling
     const updateData = {};
     
@@ -221,10 +240,19 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("id");
     
-    const deletedClass = await Class.findByIdAndDelete(classId);
-    if (!deletedClass) {
+    const existingClass = await Class.findById(classId);
+    if (!existingClass) {
       return Response.json({ error: "کلاس یافت نشد" }, { status: 404 });
     }
+    
+    // Verify the class belongs to the requesting user's school
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === existingClass.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف کلاس این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await Class.findByIdAndDelete(classId);
     
     return Response.json({ message: "کلاس با موفقیت حذف شد" });
   } catch (error) {
