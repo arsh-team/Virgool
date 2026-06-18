@@ -74,24 +74,21 @@ export async function POST(request, { params }) {
       );
     }
     
-    // بررسی تلاش کامل شده قبلی (فقط یک بار مجاز است)
-    const completedAttempt = await Attempt.findOne({
+    // بررسی تعداد تلاش‌های قبلی (شامل تکمیل شده و منقضی)
+    const attemptCount = await Attempt.countDocuments({
       quiz: quiz._id,
       user: userId,
-      status: 'completed'
+      status: { $in: ['completed', 'expired'] }
     });
     
-    if (completedAttempt) {
+    const maxAttempts = quiz.maxAttempts || 1;
+    
+    if (attemptCount >= maxAttempts) {
       return new Response(
         JSON.stringify({ 
           error: "شما قبلاً در این آزمون شرکت کرده‌اید",
-          maxAttempts: 1,
-          completedAttempt: {
-            score: completedAttempt.score,
-            percentage: completedAttempt.percentage,
-            passed: completedAttempt.passed,
-            completedAt: completedAttempt.endTime
-          }
+          maxAttempts: maxAttempts,
+          attemptCount: attemptCount
         }),
         { status: 403, headers: { "Content-Type": "application/json" } }
       );
@@ -118,8 +115,8 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Create new attempt (first and only attempt)
-    const attemptNumber = 1;
+    // Create new attempt
+    const attemptNumber = attemptCount + 1;
     const attempt = new Attempt({
       quiz: quiz._id,
       user: userId,

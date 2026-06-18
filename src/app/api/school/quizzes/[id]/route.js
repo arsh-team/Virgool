@@ -43,6 +43,13 @@ export async function PUT(request, { params }) {
       return Response.json({ error: "شما دسترسی به این عملیات ندارید" }, { status: 403 });
     }
     
+    // Verify school ownership - user must belong to the school that owns this quiz
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === quiz.service?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش آزمون این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     // تابع کمکی برای پاک کردن IDهای موقت
     const cleanQuestions = (questions) => {
       if (!questions) return questions;
@@ -117,6 +124,13 @@ export async function DELETE(request, { params }) {
     const requestingUser = await User.findById(auth.userId);
     if (!requestingUser || (requestingUser.type !== 'creator' && requestingUser.schoolRole !== 'teacher' && quiz.createdBy?.toString() !== auth.userId)) {
       return Response.json({ error: "شما دسترسی به این عملیات ندارید" }, { status: 403 });
+    }
+    
+    // Verify school ownership - user must belong to the school that owns this quiz
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === quiz.service?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف آزمون این مدرسه را ندارید" }, { status: 403 });
     }
     
     const deletedQuiz = await Quiz.findByIdAndDelete(quizId);

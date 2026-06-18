@@ -5,13 +5,16 @@ function getClientIP(request) {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
-    "127.0.0.1"
+    "unknown"
   );
 }
 
 function hasAuthToken(request) {
   const auth = request.headers.get("authorization");
-  return !!(auth && auth.startsWith("Bearer ") && auth.length > 20);
+  if (!auth || !auth.startsWith("Bearer ")) return false;
+  const token = auth.slice(7);
+  // Basic JWT format check: should have 3 parts separated by dots
+  return token.split('.').length === 3 && token.length > 20;
 }
 
 export function middleware(request) {
@@ -52,6 +55,9 @@ export function middleware(request) {
       { status: 413, headers: { "Content-Type": "application/json" } },
     );
   }
+  // NOTE: Chunked transfer-encoding can bypass content-length checks.
+  // For chunked requests, we rely on the framework's built-in body size limits.
+  // To fully prevent oversized chunked uploads, configure server-level limits.
 
   const response = NextResponse.next();
 

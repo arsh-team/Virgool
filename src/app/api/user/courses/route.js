@@ -23,9 +23,9 @@ export async function GET(request) {
       );
     }
     const enrollments = await Enrollment.find({ user: decoded.id })
-      .populate('product')
+      .populate('service', 'title category level hours rating score teacher image')
       .sort({ lastAccessed: -1 });
-    return Response.json(enrollments);
+    return Response.json({ courses: enrollments });
   } catch (error) {
     console.error("Error fetching user courses:", error);
     return Response.json(

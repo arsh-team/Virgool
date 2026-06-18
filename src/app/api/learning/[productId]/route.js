@@ -7,10 +7,20 @@ import UserProgress from "../../../../models/UserProgress";
 import Enrollment from "../../../../models/Enrollment";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
+import { isValidObjectId } from "../../../../lib/security";
 export async function GET(request, { params }) {
   try {
     const { productId } = await params;
     await connectDB();
+
+    // Validate productId format
+    if (!isValidObjectId(productId)) {
+      return new Response(
+        JSON.stringify({ error: "شناسه دوره نامعتبر است" }), 
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(

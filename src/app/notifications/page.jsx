@@ -1,43 +1,44 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  Bell, 
-  CheckCircle, 
-  Trash2, 
-  Info, 
-  AlertTriangle, 
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Bell,
+  CheckCircle,
+  Trash2,
+  Info,
+  AlertTriangle,
   CheckCircle2,
   XCircle,
   ExternalLink,
   Filter,
   Search,
-  Clock
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  Clock,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../components/header";
+import CustomSelect from "../../components/CustomSelect";
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [filter, setFilter] = useState('all'); // all, unread, read
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState("all"); // all, unread, read
+  const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
     total: 0,
-    pages: 1
+    pages: 1,
   });
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'success':
+      case "success":
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case 'warning':
+      case "warning":
         return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      case 'error':
+      case "error":
         return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'system':
+      case "system":
         return <Bell className="w-5 h-5 text-blue-500" />;
       default:
         return <Info className="w-5 h-5 text-blue-500" />;
@@ -45,16 +46,16 @@ export default function NotificationsPage() {
   };
   const getNotificationColor = (type) => {
     switch (type) {
-      case 'success':
-        return 'border-green-200 bg-green-50';
-      case 'warning':
-        return 'border-yellow-200 bg-yellow-50';
-      case 'error':
-        return 'border-red-200 bg-red-50';
-      case 'system':
-        return 'border-blue-200 bg-blue-50';
+      case "success":
+        return "border-green-200 bg-green-50";
+      case "warning":
+        return "border-yellow-200 bg-yellow-50";
+      case "error":
+        return "border-red-200 bg-red-50";
+      case "system":
+        return "border-blue-200 bg-blue-50";
       default:
-        return 'border-gray-200 bg-white';
+        return "border-gray-200 bg-white";
     }
   };
   const formatDate = (dateString) => {
@@ -63,113 +64,128 @@ export default function NotificationsPage() {
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays === 0) {
-      return 'امروز';
+      return "امروز";
     } else if (diffDays === 1) {
-      return 'دیروز';
+      return "دیروز";
     } else if (diffDays < 7) {
       return `${diffDays} روز پیش`;
     } else {
-      return date.toLocaleDateString('fa-IR');
+      return date.toLocaleDateString("fa-IR");
     }
   };
-  const fetchNotifications = useCallback(async (page = 1) => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `/api/notifications?page=${page}&limit=${pagination.limit}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+  const fetchNotifications = useCallback(
+    async (page = 1) => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `/api/notifications?page=${page}&limit=${pagination.limit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          throw new Error("خطا در دریافت اعلان‌ها");
         }
-      );
-      if (!response.ok) {
-        throw new Error('خطا در دریافت اعلان‌ها');
+        const data = await response.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+        setPagination(data.pagination);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        alert("خطا در دریافت اعلان‌ها");
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      alert('خطا در دریافت اعلان‌ها');
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.limit]);
+    },
+    [pagination.limit],
+  );
   const markAsRead = useCallback(async (notificationId = null) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/notifications/read', {
-        method: 'PUT',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/notifications/read", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           notificationId,
-          markAll: !notificationId
-        })
+          markAll: !notificationId,
+        }),
       });
       if (!response.ok) {
-        throw new Error('خطا در بروزرسانی وضعیت اعلان');
+        throw new Error("خطا در بروزرسانی وضعیت اعلان");
       }
       const data = await response.json();
       if (notificationId) {
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif._id === notificationId 
-              ? { ...notif, isRead: true }
-              : notif
-          )
+        setNotifications((prev) =>
+          prev.map((notif) =>
+            notif._id === notificationId ? { ...notif, isRead: true } : notif,
+          ),
         );
       } else {
-        setNotifications(prev => 
-          prev.map(notif => ({ ...notif, isRead: true }))
+        setNotifications((prev) =>
+          prev.map((notif) => ({ ...notif, isRead: true })),
         );
       }
       setUnreadCount(data.unreadCount);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      alert('خطا در بروزرسانی وضعیت اعلان');
+      console.error("Error marking notification as read:", error);
+      alert("خطا در بروزرسانی وضعیت اعلان");
     }
   }, []);
-  const deleteNotification = useCallback(async (notificationId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+  const deleteNotification = useCallback(
+    async (notificationId) => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`/api/notifications/${notificationId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error("خطا در حذف اعلان");
         }
-      });
-      if (!response.ok) {
-        throw new Error('خطا در حذف اعلان');
+        setNotifications((prev) =>
+          prev.filter((notif) => notif._id !== notificationId),
+        );
+        const deletedNotification = notifications.find(
+          (n) => n._id === notificationId,
+        );
+        if (deletedNotification && !deletedNotification.isRead) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        alert("خطا در حذف اعلان");
       }
-      setNotifications(prev => 
-        prev.filter(notif => notif._id !== notificationId)
-      );
-      const deletedNotification = notifications.find(n => n._id === notificationId);
-      if (deletedNotification && !deletedNotification.isRead) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+    },
+    [notifications],
+  );
+  const handleNotificationClick = useCallback(
+    async (notification) => {
+      if (!notification.isRead) {
+        await markAsRead(notification._id);
       }
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      alert('خطا در حذف اعلان');
-    }
-  }, [notifications]);
-  const handleNotificationClick = useCallback(async (notification) => {
-    if (!notification.isRead) {
-      await markAsRead(notification._id);
-    }
-    if (notification.actionUrl) {
-      router.push(notification.actionUrl);
-    }
-  }, [markAsRead, router]);
-  const filteredNotifications = notifications.filter(notification => {
-    if (filter === 'unread' && notification.isRead) return false;
-    if (filter === 'read' && !notification.isRead) return false;
+      if (notification.actionUrl) {
+        // Validate URL before navigation
+        if (
+          notification.actionUrl.startsWith("/") ||
+          notification.actionUrl.startsWith("http")
+        ) {
+          router.push(notification.actionUrl);
+        }
+      }
+    },
+    [markAsRead, router],
+  );
+  const filteredNotifications = notifications.filter((notification) => {
+    if (filter === "unread" && notification.isRead) return false;
+    if (filter === "read" && !notification.isRead) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       return (
@@ -182,11 +198,13 @@ export default function NotificationsPage() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
-  useEffect(() => {
-    if (notifications.length > 0 && unreadCount > 0) {
-      markAsRead(); 
-    }
-  }, [notifications.length]); 
+  // Disabled: auto-marking all notifications as read on page load is removed.
+  // Users should explicitly mark notifications as read by clicking them or using the "mark all as read" button.
+  // useEffect(() => {
+  //   if (notifications.length > 0 && unreadCount > 0) {
+  //     markAsRead();
+  //   }
+  // }, [notifications.length]);
   if (loading && notifications.length === 0) {
     return (
       <>
@@ -223,10 +241,9 @@ export default function NotificationsPage() {
                     اعلان‌ها
                   </h1>
                   <p className="text-gray-600 mt-1">
-                    {unreadCount > 0 
-                      ? `${unreadCount} اعلان خوانده نشده` 
-                      : 'همه اعلان‌ها خوانده شده‌اند'
-                    }
+                    {unreadCount > 0
+                      ? `${unreadCount} اعلان خوانده نشده`
+                      : "همه اعلان‌ها خوانده شده‌اند"}
                   </p>
                 </div>
               </div>
@@ -253,7 +270,7 @@ export default function NotificationsPage() {
                 />
               </div>
               <div className="flex gap-2">
-                <select
+                <CustomSelect
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                   className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -261,7 +278,7 @@ export default function NotificationsPage() {
                   <option value="all">همه اعلان‌ها</option>
                   <option value="unread">خوانده نشده</option>
                   <option value="read">خوانده شده</option>
-                </select>
+                </CustomSelect>
               </div>
             </div>
           </div>
@@ -277,9 +294,9 @@ export default function NotificationsPage() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.1 }}
                     className={`border-2 rounded-2xl p-4 transition-all cursor-pointer hover:shadow-md ${
-                      notification.isRead 
-                        ? 'border-gray-200 bg-white' 
-                        : 'border-blue-300 bg-blue-50'
+                      notification.isRead
+                        ? "border-gray-200 bg-white"
+                        : "border-blue-300 bg-blue-50"
                     } ${getNotificationColor(notification.type)}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -291,9 +308,13 @@ export default function NotificationsPage() {
                       {}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className={`font-semibold text-lg ${
-                            notification.isRead ? 'text-gray-800' : 'text-blue-800'
-                          }`}>
+                          <h3
+                            className={`font-semibold text-lg ${
+                              notification.isRead
+                                ? "text-gray-800"
+                                : "text-blue-800"
+                            }`}
+                          >
                             {notification.title}
                           </h3>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -311,8 +332,8 @@ export default function NotificationsPage() {
                         </p>
                         {notification.image && (
                           <div className="mb-3">
-                            <img 
-                              src={notification.image} 
+                            <img
+                              src={notification.image}
                               alt={notification.title}
                               className="max-w-xs rounded-lg shadow-sm"
                             />
@@ -353,10 +374,9 @@ export default function NotificationsPage() {
                     اعلانی یافت نشد
                   </h3>
                   <p className="text-gray-500">
-                    {searchTerm || filter !== 'all' 
-                      ? 'هیچ اعلانی با فیلترهای انتخاب شده مطابقت ندارد.'
-                      : 'هنوز اعلانی برای شما ارسال نشده است.'
-                    }
+                    {searchTerm || filter !== "all"
+                      ? "هیچ اعلانی با فیلترهای انتخاب شده مطابقت ندارد."
+                      : "هنوز اعلانی برای شما ارسال نشده است."}
                   </p>
                 </motion.div>
               )}
@@ -366,19 +386,21 @@ export default function NotificationsPage() {
           {pagination.pages > 1 && (
             <div className="flex justify-center mt-8">
               <div className="flex gap-2">
-                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => fetchNotifications(page)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      pagination.page === page
-                        ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => fetchNotifications(page)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        pagination.page === page
+                          ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}

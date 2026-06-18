@@ -106,5 +106,10 @@ attemptSchema.index({ status: 1, lastActivity: 1 });
 // Don't use unique index on quiz+user+status because users can have multiple quizzes
 // Only ensure unique active attempt per quiz per user
 // This is handled by application logic, not database constraint
+// NOTE: To prevent duplicate active attempts, add a unique compound index:
+attemptSchema.index({ quiz: 1, user: 1 }, { 
+  unique: true, 
+  partialFilterExpression: { status: { $in: ['in_progress', 'paused'] } } 
+});
 
 export default mongoose.models.Attempt || mongoose.model('Attempt', attemptSchema);

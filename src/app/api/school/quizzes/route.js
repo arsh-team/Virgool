@@ -53,6 +53,16 @@ export async function GET(request) {
       return Response.json({ error: "کلاس یافت نشد", quizzes: [] }, { status: 200 });
     }
     
+    // Verify the requesting user belongs to the school that owns this class
+    const requestingUser = await User.findById(auth.userId);
+    if (requestingUser) {
+      const isCreator = requestingUser.type === 'creator';
+      const belongsToSchool = requestingUser.school?.toString() === classData.school?.toString();
+      if (!isCreator && !belongsToSchool) {
+        return Response.json({ error: "شما دسترسی به آزمون‌های این مدرسه را ندارید", quizzes: [] }, { status: 403 });
+      }
+    }
+    
     const now = new Date();
     
     // دریافت تمام آزمون‌های کلاس
@@ -172,6 +182,13 @@ export async function PUT(request) {
       return Response.json({ error: "آزمون یافت نشد" }, { status: 404 });
     }
     
+    // Verify school ownership before updating
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === quiz.service?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش آزمون این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     // بروزرسانی فیلدها
     if (body.title !== undefined) quiz.title = body.title;
     if (body.description !== undefined) quiz.description = body.description;
@@ -219,10 +236,19 @@ export async function DELETE(request) {
       return Response.json({ error: "شناسه آزمون نامعتبر است" }, { status: 400 });
     }
     
-    const deletedQuiz = await Quiz.findByIdAndDelete(quizId);
-    if (!deletedQuiz) {
+    // Verify school ownership before deleting
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
       return Response.json({ error: "آزمون یافت نشد" }, { status: 404 });
     }
+    
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === quiz.service?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف آزمون این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await Quiz.findByIdAndDelete(quizId);
     
     return Response.json({ message: "آزمون با موفقیت حذف شد" });
   } catch (error) {

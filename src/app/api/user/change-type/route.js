@@ -36,6 +36,14 @@ export async function POST(request) {
       );
     }
 
+    // SECURITY: Admin cannot change their own role
+    if (user.type === 'admin') {
+      return Response.json(
+        { success: false, message: "مدیر سیستم نمی‌تواند نقش خود را تغییر دهد" },
+        { status: 403 }
+      );
+    }
+
     if (user.type === newType) {
       return Response.json(
         { success: false, message: `حساب شما همین الان هم ${newType} است` },
@@ -56,6 +64,7 @@ export async function POST(request) {
     }
 
     user.type = newType;
+    // TODO: When creator downgrades to user, clean up creator-specific data (services, etc.)
     await user.save();
 
     return Response.json(

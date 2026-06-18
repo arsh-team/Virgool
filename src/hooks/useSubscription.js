@@ -36,7 +36,7 @@ export function useSubscription(user = null) {
           // Fetch current user's subscription data
           const response = await fetch('/api/auth/me', {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+              'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
             }
           });
           
@@ -60,7 +60,7 @@ export function useSubscription(user = null) {
     }
 
     loadSubscription();
-  }, [user]);
+  }, [user?._id]);
 
   /**
    * Check if a feature is available in the current subscription tier
@@ -155,7 +155,7 @@ export function useSubscriptionLimit(resourceType, schoolId) {
   useEffect(() => {
     async function loadLimitData() {
       try {
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         const response = await fetch(`/api/school/subscription-limit?resourceType=${resourceType}&schoolId=${schoolId}`, {
           headers: {
             'Authorization': `Bearer ${token}`

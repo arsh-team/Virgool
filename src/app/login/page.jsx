@@ -26,8 +26,26 @@ export default function AuthPage() {
         setError("لطفا ایمیل و رمز عبور را وارد کنید");
         return;
       }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        setError("فرمت ایمیل صحیح نیست");
+        return;
+      }
+      if (password.length < 6) {
+        setError("رمز عبور باید حداقل 6 کاراکتر باشد");
+        return;
+      }
       setStep(2)
       return;
+    }
+    if (mode === "login") {
+      if (!email || !password) {
+        setError("لطفا ایمیل و رمز عبور را وارد کنید");
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        setError("فرمت ایمیل صحیح نیست");
+        return;
+      }
     }
     try {
       const res = await fetch("/api/auth", {

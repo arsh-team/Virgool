@@ -339,6 +339,13 @@ export async function PUT(request) {
       return Response.json({ error: "محتوای آموزشی یافت نشد" }, { status: 404 });
     }
     
+    // Verify school ownership before updating
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === content.schoolId?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش محتوای این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     return Response.json({ content, message: "محتوای آموزشی با موفقیت به‌روزرسانی شد" });
     
   } catch (error) {
@@ -373,11 +380,20 @@ export async function DELETE(request) {
       return Response.json({ error: "شناسه محتوا نامعتبر است" }, { status: 400 });
     }
     
-    const content = await EducationalContent.findByIdAndDelete(validContentId);
+    const content = await EducationalContent.findById(validContentId);
     
     if (!content) {
       return Response.json({ error: "محتوای آموزشی یافت نشد" }, { status: 404 });
     }
+    
+    // Verify school ownership before deleting
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === content.schoolId?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف محتوای این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await EducationalContent.findByIdAndDelete(validContentId);
     
     return Response.json({ message: "محتوای آموزشی با موفقیت حذف شد" });
     

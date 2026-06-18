@@ -51,6 +51,16 @@ export default function ContactPage() {
       setIsSubmitting(false);
     }
   };
+  const colorClasses = {
+    blue: 'bg-blue-100 text-blue-500',
+    green: 'bg-green-100 text-green-500',
+    red: 'bg-red-100 text-red-500',
+    yellow: 'bg-yellow-100 text-yellow-500',
+    purple: 'bg-purple-100 text-purple-500',
+    orange: 'bg-orange-100 text-orange-500',
+    pink: 'bg-pink-100 text-pink-500',
+    indigo: 'bg-indigo-100 text-indigo-500',
+  };
   const contactInfo = [
     {
       icon: Mail,
@@ -129,7 +139,7 @@ export default function ContactPage() {
                 >
                   <div className="bg-white/80 backdrop-blur-lg border border-gray-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300">
                     <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-xl bg-${item.color}-100 text-${item.color}-500 group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={`p-3 rounded-xl ${colorClasses[item.color] || colorClasses.blue} group-hover:scale-110 transition-transform duration-300`}>
                         <item.icon className="w-6 h-6" />
                       </div>
                       <div className="flex-1">

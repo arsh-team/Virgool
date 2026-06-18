@@ -56,7 +56,7 @@ const schoolFeeSchema = new mongoose.Schema({
   discounts: [{
     name: String,
     type: { type: String, enum: ['percentage', 'fixed'] },
-    value: Number,
+    value: { type: Number, min: 0 },
     applicableTo: [String] 
   }],
   paymentTerms: {

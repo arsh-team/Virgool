@@ -45,6 +45,13 @@ export async function GET(request) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
     }
     
+    // Verify the requesting user belongs to the specified school
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === schoolId;
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به اطلاعات این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     // بررسی وجود schoolId معتبر
     if (!mongoose.Types.ObjectId.isValid(schoolId)) {
       return Response.json({ error: "شناسه مدرسه نامعتبر است" }, { status: 400 });
@@ -167,6 +174,13 @@ export async function PUT(request) {
       return Response.json({ error: "تعرفه یافت نشد" }, { status: 404 });
     }
     
+    // Verify the fee belongs to the user's school
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === fee.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش تعرفه این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     if (body.name) fee.name = body.name.trim();
     if (body.feeItems) {
       fee.feeItems = body.feeItems.map(item => ({
@@ -214,10 +228,19 @@ export async function DELETE(request) {
       return Response.json({ error: "شناسه تعرفه نامعتبر است" }, { status: 400 });
     }
     
-    const fee = await SchoolFee.findByIdAndDelete(feeId);
+    // Verify the fee belongs to the user's school before deleting
+    const fee = await SchoolFee.findById(feeId);
     if (!fee) {
       return Response.json({ error: "تعرفه یافت نشد" }, { status: 404 });
     }
+    
+    const isCreator = auth.user.type === 'creator';
+    const belongsToSchool = auth.user.school?.toString() === fee.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف تعرفه این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await SchoolFee.findByIdAndDelete(feeId);
     
     return Response.json({ 
       success: true,
