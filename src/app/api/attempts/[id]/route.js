@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
     
     const attempt = await Attempt.findById(attemptId)
       .populate('user', 'firstname lastname email phone')
-      .populate('quiz', 'title passingScore timeLimit questions');
+      .populate('quiz', 'title passingScore timeLimit questions showCorrectAnswers');
     
     if (!attempt) {
       return new Response(
@@ -71,11 +71,12 @@ export async function GET(request, { params }) {
             userAnswer: answer.userAnswer,
             isCorrect: answer.isCorrect,
             pointsEarned: answer.pointsEarned,
-            correctAnswer: question.type === 'short_answer' ? question.correctAnswer : 
-              question.options?.find(o => o.isCorrect)?.text,
+            correctAnswer: (attempt.quiz.showCorrectAnswers || attempt.status === 'completed') ? 
+              (question.type === 'short_answer' ? question.correctAnswer : 
+              question.options?.find(o => o.isCorrect)?.text) : null,
             options: question.type !== 'short_answer' ? question.options?.map(o => ({
               text: o.text,
-              isCorrect: o.isCorrect
+              isCorrect: attempt.quiz.showCorrectAnswers ? o.isCorrect : undefined
             })) : undefined
           });
         }

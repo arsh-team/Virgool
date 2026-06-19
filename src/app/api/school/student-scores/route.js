@@ -52,6 +52,13 @@ export async function GET(request) {
       return Response.json({ error: "شما دسترسی به این اطلاعات ندارید" }, { status: 403 });
     }
     
+    // Verify the requesting user belongs to the specified school
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === schoolId;
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به اطلاعات این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     // دریافت اطلاعات دانش‌آموز
     const student = await User.findById(studentId)
       .populate("studentInfo.enrolledClass", "name grade");
@@ -59,12 +66,22 @@ export async function GET(request) {
     if (!student) {
       return Response.json({ error: "دانش‌آموز یافت نشد" }, { status: 404 });
     }
-    
-    // دریافت تمام دروس مدرسه
-    const subjects = await Subject.find({ 
+
+    // تعیین کلاس دانش‌آموز برای فیلتر کردن دروس مرتبط
+    const enrolledClassObj = student.studentInfo?.enrolledClass;
+    const enrolledClassId = enrolledClassObj ? (enrolledClassObj._id || enrolledClassObj) : null;
+
+    // دریافت تنها دروس مرتبط با کلاس دانش‌آموز (نه همه دروس مدرسه)
+    // اگر کلاسی ثبت نشده بود، همه دروس مدرسه نمایش داده می‌شوند
+    const subjectQuery = {
       school: schoolId,
-      isActive: true 
-    }).select("name code");
+      isActive: true
+    };
+    if (enrolledClassId) {
+      subjectQuery.classes = enrolledClassId;
+    }
+
+    const subjects = await Subject.find(subjectQuery).select("name code");
     
     // تعیین ماه‌های مورد نظر
     let monthNumbers = [];

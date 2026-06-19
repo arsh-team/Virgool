@@ -10,6 +10,13 @@ const levelRangeSchema = new mongoose.Schema(
   { _id: false }
 );
 
+levelRangeSchema.pre('save', function(next) {
+  if (this.minScore !== undefined && this.maxScore !== undefined && this.minScore >= this.maxScore) {
+    return next(new Error('minScore must be less than maxScore'));
+  }
+  next();
+});
+
 const placementTestSchema = new mongoose.Schema(
   {
     service: {

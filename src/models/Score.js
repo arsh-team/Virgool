@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const detailSchema = new mongoose.Schema({
   optionName: { type: String, required: true },
-  score: { type: Number, required: true }
+  score: { type: Number, required: true, min: 0, max: 20 }
 });
 const scoreSchema = new mongoose.Schema({
   user: {

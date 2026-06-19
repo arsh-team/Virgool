@@ -98,8 +98,7 @@ const userSchema = new mongoose.Schema(
     profile: {
       avatar: String,
       address: String,
-      city: String,
-      nationalCode: String
+      city: String
     },
     // Subscription tier fields
     subscriptionTier: {

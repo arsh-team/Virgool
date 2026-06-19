@@ -87,6 +87,15 @@ function cleanup() {
       store.delete(key);
     }
   }
+
+  // Hard cap: if store is still too large after cleanup, remove oldest entries
+  if (store.size > MAX_STORE_SIZE) {
+    const entries = [...store.entries()].sort((a, b) => a[1].currentStart - b[1].currentStart);
+    const toRemove = entries.slice(0, store.size - Math.floor(MAX_STORE_SIZE * 0.8));
+    for (const [key] of toRemove) {
+      store.delete(key);
+    }
+  }
 }
 
 // ─── Classification ──────────────────────────────────────────────────────────
@@ -238,16 +247,6 @@ export function checkRateLimit(ip, pathname, userUA, hasAuthToken) {
 
   const { count: approxCount } = slidingWindowCount(entry, now);
 
-  entry.currentCount++;
-  entry.lastRequestAt = now;
-
-  if (pathname === entry.lastPath) {
-    entry.consecutiveSamePath++;
-  } else {
-    entry.consecutiveSamePath = 0;
-    entry.lastPath = pathname;
-  }
-
   if (approxCount > effectiveLimit) {
     recordOffense(entry, now);
     const penalty = getRepeatOffensePenalty(entry, now);
@@ -262,6 +261,17 @@ export function checkRateLimit(ip, pathname, userUA, hasAuthToken) {
       classification,
       tier,
     };
+  }
+
+  // Only increment counter for allowed requests
+  entry.currentCount++;
+  entry.lastRequestAt = now;
+
+  if (pathname === entry.lastPath) {
+    entry.consecutiveSamePath++;
+  } else {
+    entry.consecutiveSamePath = 0;
+    entry.lastPath = pathname;
   }
 
   if (approxCount > effectiveLimit * BACKPRESSURE_THRESHOLD) {

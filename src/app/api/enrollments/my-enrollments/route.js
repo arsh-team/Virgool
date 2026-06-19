@@ -23,7 +23,7 @@ export async function GET(request) {
       });
     }
     const enrollments = await Enrollment.find({ user: decoded.id })
-      .populate('product', 'title category level hours rating score teacher image')
+      .populate('service', 'title category level rating price discountPercentage')
       .sort({ lastAccessed: -1 });
     return new Response(JSON.stringify(enrollments), { 
       status: 200, 

@@ -15,6 +15,7 @@ export function getUserIdFromToken(token) {
     const decoded = jwt.verify(actualToken, SECRET, { algorithms: ["HS256"] });
     return decoded.id;
   } catch (error) {
+    console.error("JWT verification error:", error.message);
     return null;
   }
 }
@@ -28,14 +29,15 @@ export async function authenticateRequest(request) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return { error: "توکن احراز هویت یافت نشد", status: 401 };
   }
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
   if (!SECRET) {
     return { error: "خطای پیکربندی سرور", status: 500 };
   }
   try {
-    const decoded = jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, SECRET, { algorithms: ["HS256"] });
     return { userId: decoded.id };
-  } catch {
+  } catch (error) {
+    console.error("JWT verification error:", error.message);
     return { error: "توکن نامعتبر است", status: 401 };
   }
 }

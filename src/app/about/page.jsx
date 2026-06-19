@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Header from "../../components/header";
 import { 
@@ -17,6 +18,7 @@ import {
   Clock
 } from "lucide-react";
 export default function AboutPage() {
+  const router = useRouter();
   const features = [
     {
       icon: Rocket,
@@ -284,7 +286,7 @@ export default function AboutPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => router.push('/login')}
                   className="bg-white text-blue-600 font-bold py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300"
                 >
                   ثبت نام رایگان

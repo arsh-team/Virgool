@@ -159,7 +159,10 @@ serviceSchema.virtual('isOnSale').get(function() {
   return this.discountPercentage > 0;
 });
 serviceSchema.virtual('subscriptionActive').get(function() {
-  if (!this.subscriptionExpiry) return this.subscriptionPlan !== 'BRONZE';
+  if (!this.subscriptionExpiry) {
+    // BRONZE (free tier) is always active; paid tiers without expiry are inactive
+    return !this.subscriptionPlan || this.subscriptionPlan === 'BRONZE';
+  }
   return new Date(this.subscriptionExpiry) > new Date();
 });
 serviceSchema.virtual('daysUntilSubscriptionExpiry').get(function() {
@@ -169,7 +172,8 @@ serviceSchema.virtual('daysUntilSubscriptionExpiry').get(function() {
 });
 serviceSchema.virtual('totalDuration').get(function() {
   if (this.category === 'آموزشی' && this.sessionDuration && this.sessionsCount) {
-    const duration = parseInt(this.sessionDuration) || 0;
+    const duration = parseInt(this.sessionDuration);
+    if (isNaN(duration)) return 0;
     return `${this.sessionsCount * duration} ساعت`;
   }
   return null;

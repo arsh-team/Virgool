@@ -118,8 +118,8 @@ export async function GET(request, { params }) {
         questionText: question.question,
         userAnswer: userAnswerText,
         correctAnswer: canViewCorrectAnswers ? correctAnswerText : null,
-        isCorrect: isCorrect,
-        pointsEarned: isCorrect ? question.points : 0,
+        isCorrect: canViewCorrectAnswers ? isCorrect : null,
+        pointsEarned: isCorrect ? (question.points || 1) : 0,
         maxPoints: question.points,
         explanation: quiz.showDetailedReport ? question.explanation : null
       };

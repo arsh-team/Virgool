@@ -58,7 +58,7 @@ export async function GET(request) {
     if (academicYear) query.academicYear = academicYear;
     
     const scores = await MonthlyScore.find(query)
-      .populate("student", "firstname lastname email phone nationalCode")
+      .populate("student", "firstname lastname email phone")
       .populate("subject", "name code")
       .populate("class", "name grade")
       .populate("recordedBy", "firstname lastname")
@@ -97,11 +97,31 @@ export async function POST(request) {
     const validScores = [];
     const errors = [];
     
+    // Validate score range (0-20) for each score value
+    function validateScoreRange(scoreValues) {
+      if (!scoreValues || typeof scoreValues !== 'object') return true;
+      for (const [key, value] of Object.entries(scoreValues)) {
+        if (value !== null && value !== undefined && value !== '') {
+          const numValue = Number(value);
+          if (isNaN(numValue) || numValue < 0 || numValue > 20) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    
     for (const scoreData of scores) {
       const { studentId, subjectId, classId, schoolId, academicYear, month, monthNumber, scoreValues, comment } = scoreData;
       
       if (!studentId || !subjectId || !classId || !schoolId || !academicYear || !monthNumber) {
         errors.push({ studentId, error: "فیلدهای الزامی ناقص هستند" });
+        continue;
+      }
+      
+      // Validate score range (0-20)
+      if (scoreValues && !validateScoreRange(scoreValues)) {
+        errors.push({ studentId, error: "نمرات باید بین ۰ تا ۲۰ باشند" });
         continue;
       }
       
@@ -113,6 +133,17 @@ export async function POST(request) {
         continue;
       }
       
+      // محاسبه میانگین نمرات (چون bulkWrite هوز pre-save را اجرا نمی‌کند)
+      const scoreFields = ['oral', 'written', 'homework', 'activity', 'exam'];
+      const validScoreValues = scoreFields
+        .map(k => scoreValues?.[k])
+        .filter(s => s !== null && s !== undefined && s !== '');
+      let calculatedAverage = null;
+      if (validScoreValues.length > 0) {
+        const sum = validScoreValues.reduce((acc, val) => acc + Number(val), 0);
+        calculatedAverage = Number((sum / validScoreValues.length).toFixed(2));
+      }
+
       validScores.push({
         updateOne: {
           filter: {
@@ -125,6 +156,7 @@ export async function POST(request) {
           update: {
             $set: {
               scores: scoreValues || {},
+              average: calculatedAverage,
               ...(comment !== undefined && { comment }),
               recordedBy: auth.userId,
               status: "completed"
@@ -196,6 +228,17 @@ export async function PUT(request) {
         activity: body.scores.activity !== undefined ? body.scores.activity : score.scores?.activity,
         exam: body.scores.exam !== undefined ? body.scores.exam : score.scores?.exam
       };
+      // محاسبه میانگین نمرات به صورت دستی (pre-save هم این کار را می‌کند اما برای اطمینان)
+      const scoreFields = ['oral', 'written', 'homework', 'activity', 'exam'];
+      const validScoreValues = scoreFields
+        .map(k => score.scores?.[k])
+        .filter(s => s !== null && s !== undefined && s !== '');
+      if (validScoreValues.length > 0) {
+        const sum = validScoreValues.reduce((acc, val) => acc + Number(val), 0);
+        score.average = Number((sum / validScoreValues.length).toFixed(2));
+      } else {
+        score.average = null;
+      }
     }
     if (body.comment !== undefined) score.comment = body.comment;
     score.recordedBy = auth.userId;

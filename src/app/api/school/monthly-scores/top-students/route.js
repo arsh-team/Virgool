@@ -121,9 +121,7 @@ export async function GET(request) {
     
     let topStudents = [];
     if (result.length > 0) {
-      const cutoffIndex = Math.min(limit - 1, result.length - 1);
-      const cutoffValue = result[cutoffIndex].totalAverage;
-      topStudents = result.filter(s => s.totalAverage >= cutoffValue);
+      topStudents = result.slice(0, limit);
     }
     
     return Response.json({ 

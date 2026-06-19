@@ -29,7 +29,14 @@ const notificationSchema = new mongoose.Schema({
   },
   actionUrl: {
     type: String,
-    default: null
+    default: null,
+    validate: {
+      validator: function(v) {
+        if (!v) return true;
+        return /^https?:\/\//i.test(v);
+      },
+      message: 'actionUrl must be a valid HTTP(S) URL'
+    }
   },
   expiresAt: {
     type: Date,

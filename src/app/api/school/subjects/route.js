@@ -42,6 +42,19 @@ export async function GET(request) {
     
     if (schoolId && mongoose.Types.ObjectId.isValid(schoolId)) {
       query.school = schoolId;
+    } else {
+      // If no valid schoolId provided, return empty
+      return Response.json({ subjects: [] });
+    }
+    
+    // Verify the requesting user belongs to the specified school
+    const requestingUser = await User.findById(auth.userId);
+    if (requestingUser) {
+      const isCreator = requestingUser.type === 'creator';
+      const belongsToSchool = requestingUser.school?.toString() === schoolId;
+      if (!isCreator && !belongsToSchool) {
+        return Response.json({ error: "شما دسترسی به دروس این مدرسه را ندارید" }, { status: 403 });
+      }
     }
     
     if (classId && mongoose.Types.ObjectId.isValid(classId)) {
@@ -100,6 +113,11 @@ export async function POST(request) {
     
     if (!schoolId) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
+    }
+    
+    // Verify the user belongs to the specified school
+    if (requestingUser.school?.toString() !== schoolId) {
+      return Response.json({ error: "شما دسترسی به ثبت درس در این مدرسه را ندارید" }, { status: 403 });
     }
     
     if (!name) {
@@ -204,6 +222,17 @@ export async function PUT(request) {
       return Response.json({ error: "شناسه درس نامعتبر است" }, { status: 400 });
     }
     
+    // Verify the subject belongs to the user's school before updating
+    const existingSubject = await Subject.findById(subjectId);
+    if (!existingSubject) {
+      return Response.json({ error: "درس یافت نشد" }, { status: 404 });
+    }
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === existingSubject.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به ویرایش درس این مدرسه را ندارید" }, { status: 403 });
+    }
+    
     const body = await request.json();
     const { name, teacher, teacherId, classes, classIds, hoursPerWeek, description, isActive } = body;
     
@@ -282,11 +311,18 @@ export async function DELETE(request) {
       return Response.json({ error: "شناسه درس نامعتبر است" }, { status: 400 });
     }
     
-    const deletedSubject = await Subject.findByIdAndDelete(subjectId);
-    
-    if (!deletedSubject) {
+    // Verify the subject belongs to the user's school before deleting
+    const existingSubject = await Subject.findById(subjectId);
+    if (!existingSubject) {
       return Response.json({ error: "درس یافت نشد" }, { status: 404 });
     }
+    const isCreator = requestingUser.type === 'creator';
+    const belongsToSchool = requestingUser.school?.toString() === existingSubject.school?.toString();
+    if (!isCreator && !belongsToSchool) {
+      return Response.json({ error: "شما دسترسی به حذف درس این مدرسه را ندارید" }, { status: 403 });
+    }
+    
+    await Subject.findByIdAndDelete(subjectId);
     
     return Response.json({ message: "درس با موفقیت حذف شد" });
     
