@@ -3,10 +3,28 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trophy, Download, Filter, Users, GraduationCap, School2, Award, Star, Image as ImageIcon } from "lucide-react";
+import {
+  X,
+  Trophy,
+  Download,
+  Filter,
+  Users,
+  GraduationCap,
+  School2,
+  Award,
+  Star,
+  Image as ImageIcon,
+} from "lucide-react";
 import html2canvas from "html2canvas";
+import CustomSelect from "../../components/CustomSelect";
 
-const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) => {
+const TopStudentsModal = ({
+  isOpen,
+  onClose,
+  school,
+  classes,
+  academicYear,
+}) => {
   const [topStudents, setTopStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [scope, setScope] = useState("school");
@@ -15,16 +33,18 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
   const [selectedTheme, setSelectedTheme] = useState("modern");
   const [downloading, setDownloading] = useState(false);
 
-  const availableGrades = [...new Set(classes.map(c => c.grade).filter(Boolean))];
+  const availableGrades = [
+    ...new Set(classes.map((c) => c.grade).filter(Boolean)),
+  ];
 
   const fetchTopStudents = useCallback(async () => {
     if (!school?._id) return;
-    
+
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       let url = `/api/school/monthly-scores/top-students?schoolId=${school._id}&academicYear=${academicYear}&scope=${scope}&limit=10`;
-      
+
       if (scope === "grade" && selectedGrade) {
         url += `&grade=${selectedGrade}`;
       } else if (scope === "class" && selectedClass) {
@@ -32,7 +52,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
       }
 
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
@@ -54,7 +74,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
 
   const downloadPoster = async () => {
     if (topStudents.length === 0) return;
-    
+
     setDownloading(true);
     try {
       const element = document.getElementById("top-students-poster");
@@ -64,7 +84,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
         scale: 2,
         backgroundColor: "#ffffff",
         logging: false,
-        useCORS: true
+        useCORS: true,
       });
 
       const link = document.createElement("a");
@@ -81,13 +101,29 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
   const getThemeColors = () => {
     switch (selectedTheme) {
       case "classic":
-        return { bg: "from-amber-50 to-yellow-100", accent: "text-amber-600", border: "border-amber-300" };
+        return {
+          bg: "from-amber-50 to-yellow-100",
+          accent: "text-amber-600",
+          border: "border-amber-300",
+        };
       case "dark":
-        return { bg: "from-gray-900 to-gray-800", accent: "text-yellow-400", border: "border-gray-700" };
+        return {
+          bg: "from-gray-900 to-gray-800",
+          accent: "text-yellow-400",
+          border: "border-gray-700",
+        };
       case "colorful":
-        return { bg: "from-purple-50 to-pink-100", accent: "text-purple-600", border: "border-purple-300" };
+        return {
+          bg: "from-purple-50 to-pink-100",
+          accent: "text-purple-600",
+          border: "border-purple-300",
+        };
       default: // modern
-        return { bg: "from-blue-50 to-cyan-100", accent: "text-blue-600", border: "border-blue-300" };
+        return {
+          bg: "from-blue-50 to-cyan-100",
+          accent: "text-blue-600",
+          border: "border-blue-300",
+        };
     }
   };
 
@@ -122,10 +158,15 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                   <h3 className="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                     🏆 نفرات برتر
                   </h3>
-                  <p className="text-sm text-gray-500">برترین دانش‌آموزان بر اساس میانگین نمرات</p>
+                  <p className="text-sm text-gray-500">
+                    برترین دانش‌آموزان بر اساس میانگین نمرات
+                  </p>
                 </div>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
                 <X className="w-6 h-6 text-gray-500" />
               </button>
             </div>
@@ -142,7 +183,9 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                   <button
                     onClick={() => setScope("school")}
                     className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
-                      scope === "school" ? "bg-blue-500 text-white shadow-md" : "text-gray-600 hover:bg-gray-100"
+                      scope === "school"
+                        ? "bg-blue-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <School2 className="w-4 h-4" />
@@ -151,7 +194,9 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                   <button
                     onClick={() => setScope("grade")}
                     className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
-                      scope === "grade" ? "bg-blue-500 text-white shadow-md" : "text-gray-600 hover:bg-gray-100"
+                      scope === "grade"
+                        ? "bg-blue-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <GraduationCap className="w-4 h-4" />
@@ -160,7 +205,9 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                   <button
                     onClick={() => setScope("class")}
                     className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
-                      scope === "class" ? "bg-blue-500 text-white shadow-md" : "text-gray-600 hover:bg-gray-100"
+                      scope === "class"
+                        ? "bg-blue-500 text-white shadow-md"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <Users className="w-4 h-4" />
@@ -170,34 +217,40 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
 
                 {/* Grade Selection */}
                 {scope === "grade" && (
-                  <select
+                  <CustomSelect
                     value={selectedGrade}
                     onChange={(e) => setSelectedGrade(e.target.value)}
                     className="p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all"
                   >
                     <option value="">انتخاب پایه...</option>
-                    {availableGrades.map(grade => (
-                      <option key={grade} value={grade}>پایه {grade}</option>
+                    {availableGrades.map((grade) => (
+                      <option key={grade} value={grade}>
+                        پایه {grade}
+                      </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 )}
 
                 {/* Class Selection */}
                 {scope === "class" && (
-                  <select
+                  <CustomSelect
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
                     className="p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all"
                   >
                     <option value="">انتخاب کلاس...</option>
-                    {classes.filter(c => c.isActive).map(cls => (
-                      <option key={cls._id} value={cls._id}>{cls.name} - پایه {cls.grade}</option>
-                    ))}
-                  </select>
+                    {classes
+                      .filter((c) => c.isActive)
+                      .map((cls) => (
+                        <option key={cls._id} value={cls._id}>
+                          {cls.name} - پایه {cls.grade}
+                        </option>
+                      ))}
+                  </CustomSelect>
                 )}
 
                 {/* Theme Selection */}
-                <select
+                <CustomSelect
                   value={selectedTheme}
                   onChange={(e) => setSelectedTheme(e.target.value)}
                   className="p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-all"
@@ -206,7 +259,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                   <option value="classic">تم کلاسیک</option>
                   <option value="dark">تم تیره</option>
                   <option value="colorful">تم رنگی</option>
-                </select>
+                </CustomSelect>
               </div>
             </div>
 
@@ -218,23 +271,37 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
             ) : topStudents.length === 0 ? (
               <div className="text-center py-16 text-gray-500">
                 <Award className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-bold text-gray-700 mb-2">هیچ داده‌ای یافت نشد</h3>
-                <p className="text-sm">برای مشاهده نفرات برتر، ابتدا نمرات ماهانه را ثبت کنید</p>
+                <h3 className="text-xl font-bold text-gray-700 mb-2">
+                  هیچ داده‌ای یافت نشد
+                </h3>
+                <p className="text-sm">
+                  برای مشاهده نفرات برتر، ابتدا نمرات ماهانه را ثبت کنید
+                </p>
               </div>
             ) : (
               <>
                 {/* Poster Preview */}
-                <div id="top-students-poster" className={`bg-gradient-to-br ${themeColors.bg} rounded-3xl p-8 mb-6 border-2 ${themeColors.border}`}>
+                <div
+                  id="top-students-poster"
+                  className={`bg-gradient-to-br ${themeColors.bg} rounded-3xl p-8 mb-6 border-2 ${themeColors.border}`}
+                >
                   <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg mb-4">
                       <Trophy className={`w-8 h-8 ${themeColors.accent}`} />
-                      <h2 className={`text-3xl font-black ${themeColors.accent}`}>✨ برترین‌های مدرسه ✨</h2>
+                      <h2
+                        className={`text-3xl font-black ${themeColors.accent}`}
+                      >
+                        ✨ برترین‌های مدرسه ✨
+                      </h2>
                     </div>
-                    <p className="text-gray-600 font-bold">سال تحصیلی {academicYear}</p>
+                    <p className="text-gray-600 font-bold">
+                      سال تحصیلی {academicYear}
+                    </p>
                     <p className="text-sm text-gray-500 mt-1">
                       {scope === "school" && "در سطح مدرسه"}
                       {scope === "grade" && `در پایه ${selectedGrade}`}
-                      {scope === "class" && `در کلاس ${classes.find(c => c._id === selectedClass)?.name || ""}`}
+                      {scope === "class" &&
+                        `در کلاس ${classes.find((c) => c._id === selectedClass)?.name || ""}`}
                     </p>
                   </div>
 
@@ -243,9 +310,11 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                       <div
                         key={student._id}
                         className={`relative bg-white rounded-2xl p-6 shadow-xl ${
-                          idx === 0 ? "ring-4 ring-amber-400 scale-105" : 
-                          idx === 1 ? "ring-2 ring-slate-400" : 
-                          "ring-2 ring-orange-400"
+                          idx === 0
+                            ? "ring-4 ring-amber-400 scale-105"
+                            : idx === 1
+                              ? "ring-2 ring-slate-400"
+                              : "ring-2 ring-orange-400"
                         }`}
                       >
                         {idx === 0 && (
@@ -256,29 +325,35 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                             </div>
                           </div>
                         )}
-                        
+
                         <div className="text-center">
-                          <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-br ${
-                            idx === 0 ? "from-amber-400 to-yellow-500" : 
-                            idx === 1 ? "from-slate-400 to-gray-500" : 
-                            "from-orange-400 to-amber-500"
-                          } flex items-center justify-center text-white text-3xl font-black shadow-lg`}>
+                          <div
+                            className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-br ${
+                              idx === 0
+                                ? "from-amber-400 to-yellow-500"
+                                : idx === 1
+                                  ? "from-slate-400 to-gray-500"
+                                  : "from-orange-400 to-amber-500"
+                            } flex items-center justify-center text-white text-3xl font-black shadow-lg`}
+                          >
                             {idx + 1}
                           </div>
-                          
+
                           <h3 className="font-black text-xl text-gray-800 mt-4">
                             {student.firstname} {student.lastname}
                           </h3>
-                          
+
                           <p className="text-sm text-gray-500 mt-1">
                             {student.studentInfo?.enrolledClass?.name && (
                               <>کلاس {student.studentInfo.enrolledClass.name}</>
                             )}
                           </p>
-                          
+
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <p className="text-xs text-gray-500">میانگین کل</p>
-                            <p className={`text-4xl font-black ${themeColors.accent}`}>
+                            <p
+                              className={`text-4xl font-black ${themeColors.accent}`}
+                            >
                               {student.totalAverage?.toFixed(2) || "-"}
                             </p>
                           </div>
@@ -316,7 +391,7 @@ const TopStudentsModal = ({ isOpen, onClose, school, classes, academicYear }) =>
                     )}
                     دانلود پوستر
                   </button>
-                  
+
                   <button
                     onClick={onClose}
                     className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"

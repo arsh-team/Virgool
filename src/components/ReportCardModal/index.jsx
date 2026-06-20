@@ -3,10 +3,24 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  X, Download, Printer, FileText, Loader2,
-  Calendar, BookOpen, Award, TrendingUp, Users, School2, Filter, ChevronLeft, ChevronRight
+  X,
+  Download,
+  Printer,
+  FileText,
+  Loader2,
+  Calendar,
+  BookOpen,
+  Award,
+  TrendingUp,
+  Users,
+  School2,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import CustomSelect from "../../components/CustomSelect";
+import { groupStudentsByClass } from "../../components/CustomSelect/groupStudentsByClass";
 
 const monthsList = [
   { name: "مهر", number: 1, semester: 1 },
@@ -17,10 +31,18 @@ const monthsList = [
   { name: "اسفند", number: 6, semester: 2 },
   { name: "فروردین", number: 7, semester: 2 },
   { name: "اردیبهشت", number: 8, semester: 2 },
-  { name: "خرداد", number: 9, semester: 2 }
+  { name: "خرداد", number: 9, semester: 2 },
 ];
 
-const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects, academicYear }) => {
+const ReportCardModal = ({
+  isOpen,
+  onClose,
+  school,
+  students,
+  classes,
+  subjects,
+  academicYear,
+}) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedScope, setSelectedScope] = useState("month");
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -30,7 +52,7 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
   const [generated, setGenerated] = useState(false);
   const [error, setError] = useState("");
   const [reportHtml, setReportHtml] = useState("");
-  
+
   // حالت دانلود گروهی
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -40,40 +62,54 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
   const [bulkReports, setBulkReports] = useState([]);
   const [loadingBulk, setLoadingBulk] = useState(false);
   const reportsPerPage = 6;
-  
-  const grades = [...new Set(classes.map(c => c.grade).filter(Boolean))];
-  
+
+  const grades = [...new Set(classes.map((c) => c.grade).filter(Boolean))];
+
   // دریافت لیست دانش‌آموزان برای دانلود گروهی
   useEffect(() => {
     if (bulkMode && (selectedClassId || selectedGrade) && school) {
       let filtered = [...students];
-      if (selectedClassId) {
-        filtered = filtered.filter(s => s.studentInfo?.enrolledClass?._id === selectedClassId);
-      } else if (selectedGrade) {
-        const classIdsInGrade = classes.filter(c => c.grade === selectedGrade).map(c => c._id.toString());
-        filtered = filtered.filter(s => classIdsInGrade.includes(s.studentInfo?.enrolledClass?._id?.toString()));
+
+      if (selectedGrade) {
+        const classIdsInGrade = classes
+          .filter((c) => c.grade === selectedGrade)
+          .map((c) => c._id.toString());
+        filtered = filtered.filter((s) =>
+          classIdsInGrade.includes(
+            s.studentInfo?.enrolledClass?._id?.toString(),
+          ),
+        );
       }
+
+      if (selectedClassId) {
+        filtered = filtered.filter(
+          (s) => s.studentInfo?.enrolledClass?._id === selectedClassId,
+        );
+      }
+
       setStudentsList(filtered);
       setCurrentPage(0);
       setBulkReports([]);
+    } else if (bulkMode && !selectedClassId && !selectedGrade) {
+      setStudentsList([]);
     }
   }, [bulkMode, selectedClassId, selectedGrade, students, classes, school]);
-  
+
   const fetchStudentScores = async (studentId, scope, month, semester) => {
     try {
       const token = localStorage.getItem("token");
       let url = `/api/school/student-scores?studentId=${studentId}&schoolId=${school._id}&academicYear=${academicYear}`;
-      
+
       if (scope === "month" && month) {
         url += `&monthNumber=${month}`;
       } else if (scope === "semester" && semester) {
         url += `&semester=${semester}`;
       }
-      
+
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         return { success: true, data };
@@ -85,33 +121,33 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
       return { success: false, error: err.message };
     }
   };
-  
+
   const handleGenerateReport = async () => {
     if (!selectedStudent) {
       setError("لطفاً دانش‌آموز را انتخاب کنید");
       return;
     }
-    
+
     if (selectedScope === "month" && !selectedMonth) {
       setError("لطفاً ماه را انتخاب کنید");
       return;
     }
-    
+
     if (selectedScope === "semester" && !selectedSemester) {
       setError("لطفاً ترم را انتخاب کنید");
       return;
     }
-    
+
     setLoading(true);
     setError("");
-    
+
     const result = await fetchStudentScores(
       selectedStudent._id,
       selectedScope,
       selectedMonth,
-      selectedSemester
+      selectedSemester,
     );
-    
+
     if (result.success) {
       setReportData(result.data);
       setReportHtml(generateReportHTML(result.data));
@@ -119,62 +155,62 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
     } else {
       setError(result.error);
     }
-    
+
     setLoading(false);
   };
-  
+
   const handleGenerateBulkReports = async () => {
     if (studentsList.length === 0) {
       setError("هیچ دانش‌آموزی برای این فیلتر یافت نشد");
       return;
     }
-    
+
     if (selectedScope === "month" && !selectedMonth) {
       setError("لطفاً ماه را انتخاب کنید");
       return;
     }
-    
+
     if (selectedScope === "semester" && !selectedSemester) {
       setError("لطفاً ترم را انتخاب کنید");
       return;
     }
-    
+
     setLoadingBulk(true);
     setError("");
-    
+
     const reports = [];
-    
+
     for (const student of studentsList) {
       const result = await fetchStudentScores(
         student._id,
         selectedScope,
         selectedMonth,
-        selectedSemester
+        selectedSemester,
       );
-      
+
       if (result.success) {
         reports.push({
           data: result.data,
-          html: generateReportHTML(result.data)
+          html: generateReportHTML(result.data),
         });
       }
     }
-    
+
     setBulkReports(reports);
     setLoadingBulk(false);
-    
+
     if (reports.length === 0) {
       setError("هیچ کارنامه‌ای تولید نشد");
     }
   };
-  
+
   const downloadSinglePDF = async () => {
     if (!reportHtml) return;
-    
+
     try {
       const html2canvas = (await import("html2canvas")).default;
       const { default: jsPDF } = await import("jspdf");
-      
+
       // ساخت div موقت برای رندر کارنامه
       const container = document.createElement("div");
       container.style.position = "absolute";
@@ -185,15 +221,15 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
       container.style.direction = "rtl";
       container.innerHTML = reportHtml;
       document.body.appendChild(container);
-      
+
       const reportElement = container.querySelector(".report-card");
-      
+
       if (!reportElement) {
         document.body.removeChild(container);
         setError("خطا در پیدا کردن محتوای کارنامه");
         return;
       }
-      
+
       const canvas = await html2canvas(reportElement, {
         scale: 2,
         backgroundColor: "#ffffff",
@@ -201,58 +237,60 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         useCORS: true,
         allowTaint: true,
         width: 900,
-        windowWidth: 900
+        windowWidth: 900,
       });
-      
+
       document.body.removeChild(container);
-      
+
       const imgData = canvas.toDataURL("image/png");
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4"
+        format: "a4",
       });
-      
+
       const pageWidth = 210;
       const pageHeight = 297;
       const imgWidth = pageWidth - 10; // 5mm margin each side
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       const marginX = 5;
       let position = 5; // top margin
-      
+
       doc.addImage(imgData, "PNG", marginX, position, imgWidth, imgHeight);
       let heightLeft = imgHeight - (pageHeight - 10);
-      
+
       while (heightLeft > 0) {
         position = heightLeft - imgHeight + 5;
         doc.addPage();
         doc.addImage(imgData, "PNG", marginX, position, imgWidth, imgHeight);
-        heightLeft -= (pageHeight - 10);
+        heightLeft -= pageHeight - 10;
       }
-      
-      doc.save(`report_card_${reportData?.student?.firstname}_${reportData?.student?.lastname}_${academicYear}.pdf`);
+
+      doc.save(
+        `report_card_${reportData?.student?.firstname}_${reportData?.student?.lastname}_${academicYear}.pdf`,
+      );
     } catch (err) {
       console.error("PDF error:", err);
       setError("خطا در دانلود PDF");
     }
   };
-  
+
   const downloadBulkPDF = async () => {
     if (bulkReports.length === 0) return;
-    
+
     try {
       const html2canvas = (await import("html2canvas")).default;
       const { default: jsPDF } = await import("jspdf");
-      
+
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4"
+        format: "a4",
       });
-      
+
       for (let i = 0; i < bulkReports.length; i++) {
         const report = bulkReports[i];
-        
+
         // ایجاد div موقت برای رندر
         const container = document.createElement("div");
         container.style.position = "absolute";
@@ -262,45 +300,45 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         container.style.width = "800px";
         container.innerHTML = report.html;
         document.body.appendChild(container);
-        
+
         const reportElement = container.querySelector(".report-card");
-        
+
         if (reportElement) {
           const canvas = await html2canvas(reportElement, {
             scale: 2.5,
             backgroundColor: "#ffffff",
             logging: false,
             useCORS: true,
-            allowTaint: false
+            allowTaint: false,
           });
-          
+
           const imgData = canvas.toDataURL("image/png");
           const imgWidth = 210;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
+
           if (i > 0) {
             doc.addPage();
           }
-          
+
           doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
         }
-        
+
         document.body.removeChild(container);
       }
-      
-      const scopeLabel = selectedClassId 
-        ? `class_${classes.find(c => c._id === selectedClassId)?.name}`
-        : selectedGrade 
+
+      const scopeLabel = selectedClassId
+        ? `class_${classes.find((c) => c._id === selectedClassId)?.name}`
+        : selectedGrade
           ? `grade_${selectedGrade}`
           : "all";
-      
+
       doc.save(`report_cards_${scopeLabel}_${academicYear}.pdf`);
     } catch (err) {
       console.error("Bulk PDF error:", err);
       setError("خطا در دانلود کارنامه‌های گروهی");
     }
   };
-  
+
   const printSingleReport = () => {
     const iframe = document.getElementById("single-report-iframe");
     if (iframe) {
@@ -316,21 +354,26 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
       }
     }
   };
-  
+
   // Helper: escape HTML to prevent XSS
   const escapeHtml = (str) => {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   };
 
   const generateReportHTML = (data) => {
     const scores = data.scores;
-    
+
     // محاسبه میانگین کل
     let totalAverage = null;
     let totalScore = 0;
     let count = 0;
-    
+
     for (const subject of Object.values(scores)) {
       const avg = subject.average;
       if (avg !== null && avg > 0) {
@@ -341,24 +384,35 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
     if (count > 0) {
       totalAverage = Math.round((totalScore / count) * 10) / 10;
     }
-    
+
     const isMonthly = data.reportType === "monthly";
     const monthName = data.monthName || "";
     const monthNumber = data.monthNumber;
-    
+
     // ایجاد ردیف‌های جدول
     let tableRows = "";
-    
+
     for (const subject of Object.values(scores)) {
       if (isMonthly) {
         const monthData = subject.scores?.[monthNumber];
         const finalScore = monthData?.finalScore;
-        const activityVal = monthData?.activity !== null ? monthData.activity : "-";
+        const activityVal =
+          monthData?.activity !== null ? monthData.activity : "-";
         const examVal = monthData?.exam !== null ? monthData.exam : "-";
         const finalVal = finalScore !== null ? finalScore : "-";
-        const statusText = finalScore !== null ? (finalScore >= 10 ? "✓ قبول" : "✗ مردود") : "ثبت نشده";
-        const statusClass = finalScore >= 10 ? "status-passed" : (finalScore !== null ? "status-failed" : "");
-        
+        const statusText =
+          finalScore !== null
+            ? finalScore >= 10
+              ? "✓ قبول"
+              : "✗ مردود"
+            : "ثبت نشده";
+        const statusClass =
+          finalScore >= 10
+            ? "status-passed"
+            : finalScore !== null
+              ? "status-failed"
+              : "";
+
         tableRows += `
           <tr>
             <td style="text-align:right; font-weight:500; padding:12px;">${subject.name}</td>
@@ -370,9 +424,19 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         `;
       } else {
         const avgVal = subject.average !== null ? subject.average : "-";
-        const statusText = subject.average !== null ? (subject.average >= 10 ? "✓ قبول" : "✗ مردود") : "ثبت نشده";
-        const statusClass = subject.average >= 10 ? "status-passed" : (subject.average !== null ? "status-failed" : "");
-        
+        const statusText =
+          subject.average !== null
+            ? subject.average >= 10
+              ? "✓ قبول"
+              : "✗ مردود"
+            : "ثبت نشده";
+        const statusClass =
+          subject.average >= 10
+            ? "status-passed"
+            : subject.average !== null
+              ? "status-failed"
+              : "";
+
         tableRows += `
           <tr>
             <td style="text-align:right; font-weight:500; padding:12px;">${subject.name}</td>
@@ -382,17 +446,26 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
         `;
       }
     }
-    
-    const reportTitle = isMonthly 
+
+    const reportTitle = isMonthly
       ? `کارنامه ماه ${monthName}`
-      : (data.reportType === "semester1" 
-        ? "کارنامه ترم اول (مهر تا دی)" 
+      : data.reportType === "semester1"
+        ? "کارنامه ترم اول (مهر تا دی)"
         : data.reportType === "semester2"
           ? "کارنامه ترم دوم (بهمن تا خرداد)"
-          : "کارنامه سالانه");
-    
-    const summaryStatus = totalAverage >= 17 ? "عالی" : totalAverage >= 14 ? "خوب" : totalAverage >= 10 ? "قابل قبول" : totalAverage !== null ? "نیاز به تلاش" : "ثبت نشده";
-    
+          : "کارنامه سالانه";
+
+    const summaryStatus =
+      totalAverage >= 17
+        ? "عالی"
+        : totalAverage >= 14
+          ? "خوب"
+          : totalAverage >= 10
+            ? "قابل قبول"
+            : totalAverage !== null
+              ? "نیاز به تلاش"
+              : "ثبت نشده";
+
     return `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -581,7 +654,7 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
               <thead>
                 <tr>
                   <th>عنوان درس</th>
-                  ${isMonthly ? '<th>فعالیت</th><th>امتحان</th><th>نمره نهایی</th><th>وضعیت</th>' : '<th>میانگین</th><th>وضعیت</th>'}
+                  ${isMonthly ? "<th>فعالیت</th><th>امتحان</th><th>نمره نهایی</th><th>وضعیت</th>" : "<th>میانگین</th><th>وضعیت</th>"}
                 </tr>
               </thead>
               <tbody>
@@ -595,14 +668,18 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
               <div class="summary-label">تعداد دروس</div>
               <div class="summary-value">${Object.keys(scores).length}</div>
             </div>
-            ${totalAverage !== null ? `<div class="summary-card">
+            ${
+              totalAverage !== null
+                ? `<div class="summary-card">
               <div class="summary-label">میانگین کل</div>
               <div class="summary-value">${totalAverage}</div>
             </div>
             <div class="summary-card">
               <div class="summary-label">وضعیت</div>
-              <div class="summary-value" style="font-size:16px; color: ${totalAverage >= 10 ? '#16a34a' : '#dc2626'}">${summaryStatus}</div>
-            </div>` : ''}
+              <div class="summary-value" style="font-size:16px; color: ${totalAverage >= 10 ? "#16a34a" : "#dc2626"}">${summaryStatus}</div>
+            </div>`
+                : ""
+            }
           </div>
           
           <div class="footer">
@@ -613,12 +690,15 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
       </html>
     `;
   };
-  
-  const currentReports = bulkReports.slice(currentPage * reportsPerPage, (currentPage + 1) * reportsPerPage);
+
+  const currentReports = bulkReports.slice(
+    currentPage * reportsPerPage,
+    (currentPage + 1) * reportsPerPage,
+  );
   const totalPages = Math.ceil(bulkReports.length / reportsPerPage);
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -655,43 +735,72 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                   <Users className="w-4 h-4 inline ml-1" />
                   {bulkMode ? "حالت تکی" : "دانلود گروهی"}
                 </button>
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
             </div>
-            
+
             {/* Filters - با استایل ثابت */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6">
               {bulkMode ? (
                 <>
-                  <select
-                    value={selectedClassId}
-                    onChange={(e) => { setSelectedClassId(e.target.value); setSelectedGrade(""); setBulkReports([]); }}
-                    className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm"
-                  >
-                    <option value="">انتخاب کلاس...</option>
-                    {classes.map(c => (
-                      <option key={c._id} value={c._id}>{c.name} - پایه {c.grade}</option>
-                    ))}
-                  </select>
-                  
-                  <select
+                  <CustomSelect
                     value={selectedGrade}
-                    onChange={(e) => { setSelectedGrade(e.target.value); setSelectedClassId(""); setBulkReports([]); }}
+                    onChange={(e) => {
+                      setSelectedGrade(e.target.value);
+                      // وقتی پایه عوض میشه، اگه کلاس انتخاب‌شده دیگه متعلق به این پایه نیست پاکش کن
+                      if (
+                        selectedClassId &&
+                        classes.find((c) => c._id === selectedClassId)
+                          ?.grade !== e.target.value
+                      ) {
+                        setSelectedClassId("");
+                      }
+                      setBulkReports([]);
+                    }}
                     className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm"
                   >
                     <option value="">انتخاب پایه...</option>
-                    {grades.map(g => (
-                      <option key={g} value={g}>پایه {g}</option>
+                    {grades.map((g) => (
+                      <option key={g} value={g}>
+                        پایه {g}
+                      </option>
                     ))}
-                  </select>
+                  </CustomSelect>
+
+                  <CustomSelect
+                    value={selectedClassId}
+                    onChange={(e) => {
+                      setSelectedClassId(e.target.value);
+                      setBulkReports([]);
+                    }}
+                    className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm"
+                  >
+                    <option value="">
+                      {selectedGrade ? "همه کلاس‌ها" : "انتخاب کلاس..."}
+                    </option>
+                    {classes
+                      .filter(
+                        (c) => !selectedGrade || c.grade === selectedGrade,
+                      )
+                      .map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.name} - پایه {c.grade}
+                        </option>
+                      ))}
+                  </CustomSelect>
                 </>
               ) : (
-                <select
+                <CustomSelect
                   value={selectedStudent?._id || ""}
                   onChange={(e) => {
-                    const student = students.find(s => s._id === e.target.value);
+                    const student = students.find(
+                      (s) => s._id === e.target.value,
+                    );
                     setSelectedStudent(student);
                     setGenerated(false);
                     setReportData(null);
@@ -699,15 +808,19 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                   className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm lg:col-span-2"
                 >
                   <option value="">انتخاب دانش‌آموز...</option>
-                  {students.map(s => (
-                    <option key={s._id} value={s._id}>
-                      {s.firstname} {s.lastname} - {s.studentInfo?.enrolledClass?.name || "بدون کلاس"}
-                    </option>
+                  {groupStudentsByClass(students).map((g) => (
+                    <optgroup key={g.label} label={g.label}>
+                      {g.students.map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.firstname} {s.lastname}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
-                </select>
+                </CustomSelect>
               )}
-              
-              <select
+
+              <CustomSelect
                 value={selectedScope}
                 onChange={(e) => {
                   setSelectedScope(e.target.value);
@@ -719,23 +832,25 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                 <option value="month">کارنامه ماهانه</option>
                 <option value="semester">کارنامه ترم</option>
                 <option value="year">کارنامه سالانه</option>
-              </select>
-              
+              </CustomSelect>
+
               {selectedScope === "month" && (
-                <select
+                <CustomSelect
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm"
                 >
                   <option value="">انتخاب ماه...</option>
-                  {monthsList.map(m => (
-                    <option key={m.number} value={m.number}>{m.name}</option>
+                  {monthsList.map((m) => (
+                    <option key={m.number} value={m.number}>
+                      {m.name}
+                    </option>
                   ))}
-                </select>
+                </CustomSelect>
               )}
-              
+
               {selectedScope === "semester" && (
-                <select
+                <CustomSelect
                   value={selectedSemester}
                   onChange={(e) => setSelectedSemester(e.target.value)}
                   className="p-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-400 transition-all text-sm"
@@ -743,25 +858,36 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                   <option value="">انتخاب ترم...</option>
                   <option value="1">ترم اول (مهر تا دی)</option>
                   <option value="2">ترم دوم (بهمن تا خرداد)</option>
-                </select>
+                </CustomSelect>
               )}
-              
+
               <button
-                onClick={bulkMode ? handleGenerateBulkReports : handleGenerateReport}
-                disabled={loading || loadingBulk || (bulkMode && studentsList.length === 0) || (!bulkMode && !selectedStudent)}
+                onClick={
+                  bulkMode ? handleGenerateBulkReports : handleGenerateReport
+                }
+                disabled={
+                  loading ||
+                  loadingBulk ||
+                  (bulkMode && studentsList.length === 0) ||
+                  (!bulkMode && !selectedStudent)
+                }
                 className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
               >
-                {(loading || loadingBulk) ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                {loading || loadingBulk ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
                 {loading || loadingBulk ? "در حال دریافت..." : "مشاهده کارنامه"}
               </button>
             </div>
-            
+
             {error && (
               <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-center text-sm">
                 {error}
               </div>
             )}
-            
+
             {/* Single Report View - با iframe برای ایزوله کردن */}
             {!bulkMode && generated && reportHtml && (
               <div>
@@ -773,50 +899,74 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                   title="کارنامه تحصیلی"
                   sandbox="allow-same-origin allow-scripts allow-popups"
                 />
-                
+
                 <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t">
-                  <button onClick={() => { setGenerated(false); setReportData(null); setReportHtml(""); }} className="flex-1 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm">
+                  <button
+                    onClick={() => {
+                      setGenerated(false);
+                      setReportData(null);
+                      setReportHtml("");
+                    }}
+                    className="flex-1 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm"
+                  >
                     بستن
                   </button>
-                  <button onClick={printSingleReport} className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm">
+                  <button
+                    onClick={printSingleReport}
+                    className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
                     <Printer className="w-4 h-4" />
                     چاپ کارنامه
                   </button>
-                  <button onClick={downloadSinglePDF} className="flex-1 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm">
+                  <button
+                    onClick={downloadSinglePDF}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
                     <Download className="w-4 h-4" />
                     دانلود PDF
                   </button>
                 </div>
               </div>
             )}
-            
+
             {/* Bulk Reports View - 3x2 Grid با iframe */}
             {bulkMode && bulkReports.length > 0 && (
               <div>
                 <div className="flex justify-between items-center mb-4 text-sm text-gray-500">
                   <span>تعداد کارنامه‌ها: {bulkReports.length}</span>
-                  <span>صفحه {currentPage + 1} از {totalPages || 1}</span>
+                  <span>
+                    صفحه {currentPage + 1} از {totalPages || 1}
+                  </span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {currentReports.map((report, idx) => (
-                    <div key={idx} className="border rounded-xl overflow-hidden shadow-lg bg-white">
+                    <div
+                      key={idx}
+                      className="border rounded-xl overflow-hidden shadow-lg bg-white"
+                    >
                       <iframe
                         srcDoc={report.html}
                         className="w-full"
-                        style={{ minHeight: "550px", height: "auto", border: "none" }}
+                        style={{
+                          minHeight: "550px",
+                          height: "auto",
+                          border: "none",
+                        }}
                         title={`کارنامه ${idx + 1}`}
                         sandbox="allow-same-origin allow-scripts"
                       />
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-3 mt-6">
                     <button
-                      onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(0, prev - 1))
+                      }
                       disabled={currentPage === 0}
                       className="p-2 rounded-lg bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"
                     >
@@ -826,7 +976,11 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                       صفحه {currentPage + 1} از {totalPages}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(totalPages - 1, prev + 1),
+                        )
+                      }
                       disabled={currentPage === totalPages - 1}
                       className="p-2 rounded-lg bg-gray-100 disabled:opacity-50 hover:bg-gray-200 transition"
                     >
@@ -834,41 +988,65 @@ const ReportCardModal = ({ isOpen, onClose, school, students, classes, subjects,
                     </button>
                   </div>
                 )}
-                
+
                 <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t">
-                  <button onClick={() => { setBulkReports([]); }} className="flex-1 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm">
+                  <button
+                    onClick={() => {
+                      setBulkReports([]);
+                    }}
+                    className="flex-1 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm"
+                  >
                     بستن
                   </button>
-                  <button onClick={downloadBulkPDF} className="flex-1 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm">
+                  <button
+                    onClick={downloadBulkPDF}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
                     <Download className="w-4 h-4" />
                     دانلود همه کارنامه‌ها (PDF)
                   </button>
                 </div>
               </div>
             )}
-            
+
             {/* Empty State */}
-            {bulkMode && studentsList.length > 0 && bulkReports.length === 0 && !loadingBulk && !error && (
-              <div className="text-center py-12 text-gray-500">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>برای مشاهده کارنامه‌ها، دکمه "مشاهده کارنامه" را بزنید</p>
-              </div>
-            )}
-            
-            {bulkMode && studentsList.length === 0 && !loadingBulk && !error && (
-              <div className="text-center py-12 text-gray-500">
-                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>هیچ دانش‌آموزی برای فیلتر انتخاب شده یافت نشد</p>
-                <p className="text-sm mt-2">لطفاً یک کلاس یا پایه را انتخاب کنید</p>
-              </div>
-            )}
-            
-            {!bulkMode && !generated && !loading && !error && selectedStudent && (
-              <div className="text-center py-12 text-gray-500">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>محدوده مورد نظر را انتخاب کرده و دکمه "مشاهده کارنامه" را بزنید</p>
-              </div>
-            )}
+            {bulkMode &&
+              studentsList.length > 0 &&
+              bulkReports.length === 0 &&
+              !loadingBulk &&
+              !error && (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>برای مشاهده کارنامه‌ها، دکمه "مشاهده کارنامه" را بزنید</p>
+                </div>
+              )}
+
+            {bulkMode &&
+              studentsList.length === 0 &&
+              !loadingBulk &&
+              !error && (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>هیچ دانش‌آموزی برای فیلتر انتخاب شده یافت نشد</p>
+                  <p className="text-sm mt-2">
+                    لطفاً یک کلاس یا پایه را انتخاب کنید
+                  </p>
+                </div>
+              )}
+
+            {!bulkMode &&
+              !generated &&
+              !loading &&
+              !error &&
+              selectedStudent && (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>
+                    محدوده مورد نظر را انتخاب کرده و دکمه "مشاهده کارنامه" را
+                    بزنید
+                  </p>
+                </div>
+              )}
           </motion.div>
         </motion.div>
       )}
