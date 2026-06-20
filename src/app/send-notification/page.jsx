@@ -305,6 +305,22 @@ export default function SendNotificationPage() {
     setSelectedGrades([]);
   };
 
+  // Master select/clear for "all" mode — selects (or clears) every item across
+  // all 4 accordions (grades, classes, students, teachers) at once.
+  const selectAllRecipients = () => {
+    setSelectedTeachers([...teachers]);
+    setSelectedStudents([...students]);
+    setSelectedClasses([...classes]);
+    setSelectedGrades([...availableGrades]);
+  };
+
+  const clearAllRecipients = () => {
+    setSelectedTeachers([]);
+    setSelectedStudents([]);
+    setSelectedClasses([]);
+    setSelectedGrades([]);
+  };
+
   const getStudentsByClass = (classId) => {
     return students.filter(
       (s) =>
@@ -328,7 +344,17 @@ export default function SendNotificationPage() {
     let recipients = [];
 
     if (selectionMode === "all") {
-      recipients = [...teachers, ...students];
+      // In "all" mode the 4 accordions (grades, classes, students, teachers)
+      // are shown together; recipients are the union of whatever the user
+      // selected across all of them.
+      recipients.push(...selectedTeachers);
+      recipients.push(...selectedStudents);
+      selectedClasses.forEach((cls) => {
+        recipients.push(...getStudentsByClass(cls._id));
+      });
+      selectedGrades.forEach((grade) => {
+        recipients.push(...getStudentsByGrade(grade));
+      });
     } else {
       if (selectionMode === "teachers" || selectedTeachers.length > 0) {
         recipients.push(...selectedTeachers);
@@ -365,7 +391,18 @@ export default function SendNotificationPage() {
 
   const getRecipientCount = () => {
     if (selectionMode === "all") {
-      return teachers.length + students.length;
+      // Deduped count matching getSelectedRecipients — a student may be reached
+      // via direct selection, their class, and their grade simultaneously.
+      const ids = new Set();
+      selectedTeachers.forEach((t) => ids.add(t._id));
+      selectedStudents.forEach((s) => ids.add(s._id));
+      selectedClasses.forEach((cls) => {
+        getStudentsByClass(cls._id).forEach((s) => ids.add(s._id));
+      });
+      selectedGrades.forEach((grade) => {
+        getStudentsByGrade(grade).forEach((s) => ids.add(s._id));
+      });
+      return ids.size;
     }
 
     let count = 0;
@@ -696,11 +733,28 @@ export default function SendNotificationPage() {
                           key={mode.id}
                           onClick={() => {
                             setSelectionMode(mode.id);
-                            if (mode.id !== "all") {
+                            if (mode.id === "all") {
+                              // Collapse all accordions so the 4 headers are
+                              // visible at a glance in "all" mode.
+                              setExpandedSections({
+                                teachers: false,
+                                students: false,
+                                classes: false,
+                                grades: false,
+                              });
+                            } else {
                               setSelectedTeachers([]);
                               setSelectedStudents([]);
                               setSelectedClasses([]);
                               setSelectedGrades([]);
+                              // Expand only the relevant section in specific mode.
+                              setExpandedSections({
+                                teachers: false,
+                                students: false,
+                                classes: false,
+                                grades: false,
+                                [mode.id]: true,
+                              });
                             }
                           }}
                           className={`p-3 rounded-xl font-bold transition-all ${
@@ -716,89 +770,170 @@ export default function SendNotificationPage() {
                     </div>
                   </div>
 
-                  {/* Teachers Selection */}
-                  {selectionMode === "teachers" && (
+                  {/* Master select/clear toolbar — only in "all" mode */}
+                  {selectionMode === "all" && (
+                    <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-4 shadow-2xl border border-white/50 flex items-center justify-between flex-wrap gap-3">
+                      <p className="text-sm text-gray-600">
+                        برای ارسال انتخابی، از آکاردئون‌های زیر مورد انتخاب کنید:
+                      </p>
+                      <div className="flex gap-2 w-full justify-center">
+                        <button
+                          type="button"
+                          onClick={selectAllRecipients}
+                          className="text-xs text-white w-full bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-lg cursor-pointer font-bold"
+                        >
+                          انتخاب همه گیرندگان
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearAllRecipients}
+                          className="text-xs w-full text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 cursor-pointer font-bold"
+                        >
+                          حذف همه
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grades Selection — shows in "grades" mode and "all" mode */}
+                  {(selectionMode === "grades" ||
+                    selectionMode === "all") && (
                     <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
                       <SectionHeader
-                        title="دبیران"
-                        icon={GraduationCap}
-                        count={teachers.length}
-                        section="teachers"
-                        onSelectAll={selectAllTeachers}
-                        onClearAll={clearAllTeachers}
+                        title="پایه‌های تحصیلی"
+                        icon={Filter}
+                        count={availableGrades.length}
+                        section="grades"
+                        onSelectAll={selectAllGrades}
+                        onClearAll={clearAllGrades}
                       />
                       <AnimatePresence>
-                        {expandedSections.teachers && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-gray-100 p-4"
-                          >
-                            <div className="relative mb-3">
-                              <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
-                              <input
-                                type="text"
-                                placeholder="جستجوی دبیر..."
-                                value={teacherSearch}
-                                onChange={(e) =>
-                                  setTeacherSearch(e.target.value)
-                                }
-                                className="w-full pr-9 pl-3 py-2 border border-gray-200 rounded-lg text-sm"
-                              />
-                            </div>
-                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {filteredTeachers.map((teacher) => (
-                                <label
-                                  key={teacher._id}
-                                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                                    selectedTeachers.find(
-                                      (t) => t._id === teacher._id,
-                                    )
-                                      ? "bg-blue-50 border border-blue-200"
-                                      : "hover:bg-gray-50 border border-transparent"
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      !!selectedTeachers.find(
-                                        (t) => t._id === teacher._id,
-                                      )
-                                    }
-                                    onChange={() => toggleTeacher(teacher)}
-                                    className="w-4 h-4 text-blue-600 rounded"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="font-medium text-gray-800">
-                                      {teacher.firstname} {teacher.lastname}
-                                    </p>
-                                    <p className="text-xs text-gray-500 flex items-center gap-2">
-                                      <Mail className="w-3 h-3" />
-                                      {teacher.email}
-                                      {teacher.phone && (
-                                        <>
-                                          <Phone className="w-3 h-3 mr-2" />
-                                          {teacher.phone}
-                                        </>
-                                      )}
-                                    </p>
-                                  </div>
-                                </label>
-                              ))}
-                              {filteredTeachers.length === 0 && (
-                                <p className="text-center text-gray-500 py-4">
-                                  دبیری یافت نشد
-                                </p>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
+                        {expandedSections.grades &&
+                          (selectionMode === "grades" ||
+                            selectionMode === "all") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="border-t border-gray-100 p-4"
+                            >
+                              <div className="space-y-2">
+                                {availableGrades.map((grade) => (
+                                  <label
+                                    key={grade}
+                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                                      selectedGrades.includes(grade)
+                                        ? "bg-blue-50 border border-blue-200"
+                                        : "hover:bg-gray-50 border border-transparent"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedGrades.includes(grade)}
+                                      onChange={() => toggleGrade(grade)}
+                                      className="w-4 h-4 text-blue-600 rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-800">
+                                        پایه {grade}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {
+                                          classes.filter((c) => c.grade === grade)
+                                            .length
+                                        }{" "}
+                                        کلاس | {getStudentsByGrade(grade).length}{" "}
+                                        دانش‌آموز
+                                      </p>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
                       </AnimatePresence>
                     </div>
                   )}
 
-                  {/* Students Selection */}
+                  {/* Classes Selection — shows in "classes" mode and "all" mode */}
+                  {(selectionMode === "classes" ||
+                    selectionMode === "all") && (
+                    <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+                      <SectionHeader
+                        title="کلاس‌ها"
+                        icon={School2}
+                        count={classes.length}
+                        section="classes"
+                        onSelectAll={selectAllClasses}
+                        onClearAll={clearAllClasses}
+                      />
+                      <AnimatePresence>
+                        {expandedSections.classes &&
+                          (selectionMode === "classes" ||
+                            selectionMode === "all") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="border-t border-gray-100 p-4"
+                            >
+                              <div className="relative mb-3">
+                                <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  placeholder="جستجوی کلاس..."
+                                  value={classSearch}
+                                  onChange={(e) => setClassSearch(e.target.value)}
+                                  className="w-full pr-9 pl-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {filteredClasses.map((cls) => (
+                                  <label
+                                    key={cls._id}
+                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                                      selectedClasses.find(
+                                        (c) => c._id === cls._id,
+                                      )
+                                        ? "bg-blue-50 border border-blue-200"
+                                        : "hover:bg-gray-50 border border-transparent"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        !!selectedClasses.find(
+                                          (c) => c._id === cls._id,
+                                        )
+                                      }
+                                      onChange={() => toggleClass(cls)}
+                                      className="w-4 h-4 text-blue-600 rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-800">
+                                        {cls.name}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        پایه {cls.grade} |{" "}
+                                        {getStudentsByClass(cls._id).length}{" "}
+                                        دانش‌آموز
+                                      </p>
+                                    </div>
+                                  </label>
+                                ))}
+                                {filteredClasses.length === 0 && (
+                                  <p className="text-center text-gray-500 py-4">
+                                    کلاسی یافت نشد
+                                  </p>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {/* Students Selection — shows in "students" mode and "all" mode */}
                   {(selectionMode === "students" ||
                     selectionMode === "all") && (
                     <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
@@ -809,7 +944,6 @@ export default function SendNotificationPage() {
                         section="students"
                         onSelectAll={selectAllStudents}
                         onClearAll={clearAllStudents}
-                        showActions={selectionMode === "students"}
                       />
                       <AnimatePresence>
                         {expandedSections.students &&
@@ -853,7 +987,6 @@ export default function SendNotificationPage() {
                                         )
                                       }
                                       onChange={() => toggleStudent(student)}
-                                      disabled={selectionMode === "all"}
                                       className="w-4 h-4 text-blue-600 rounded"
                                     />
                                     <div className="flex-1">
@@ -883,134 +1016,87 @@ export default function SendNotificationPage() {
                     </div>
                   )}
 
-                  {/* Classes Selection */}
-                  {selectionMode === "classes" && (
+                  {/* Teachers Selection — shows in "teachers" mode and "all" mode */}
+                  {(selectionMode === "teachers" ||
+                    selectionMode === "all") && (
                     <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
                       <SectionHeader
-                        title="کلاس‌ها"
-                        icon={School2}
-                        count={classes.length}
-                        section="classes"
-                        onSelectAll={selectAllClasses}
-                        onClearAll={clearAllClasses}
+                        title="دبیران"
+                        icon={GraduationCap}
+                        count={teachers.length}
+                        section="teachers"
+                        onSelectAll={selectAllTeachers}
+                        onClearAll={clearAllTeachers}
                       />
                       <AnimatePresence>
-                        {expandedSections.classes && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-gray-100 p-4"
-                          >
-                            <div className="relative mb-3">
-                              <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
-                              <input
-                                type="text"
-                                placeholder="جستجوی کلاس..."
-                                value={classSearch}
-                                onChange={(e) => setClassSearch(e.target.value)}
-                                className="w-full pr-9 pl-3 py-2 border border-gray-200 rounded-lg text-sm"
-                              />
-                            </div>
-                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {filteredClasses.map((cls) => (
-                                <label
-                                  key={cls._id}
-                                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                                    selectedClasses.find(
-                                      (c) => c._id === cls._id,
-                                    )
-                                      ? "bg-blue-50 border border-blue-200"
-                                      : "hover:bg-gray-50 border border-transparent"
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      !!selectedClasses.find(
-                                        (c) => c._id === cls._id,
+                        {expandedSections.teachers &&
+                          (selectionMode === "teachers" ||
+                            selectionMode === "all") && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="border-t border-gray-100 p-4"
+                            >
+                              <div className="relative mb-3">
+                                <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  placeholder="جستجوی دبیر..."
+                                  value={teacherSearch}
+                                  onChange={(e) =>
+                                    setTeacherSearch(e.target.value)
+                                  }
+                                  className="w-full pr-9 pl-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {filteredTeachers.map((teacher) => (
+                                  <label
+                                    key={teacher._id}
+                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                                      selectedTeachers.find(
+                                        (t) => t._id === teacher._id,
                                       )
-                                    }
-                                    onChange={() => toggleClass(cls)}
-                                    className="w-4 h-4 text-blue-600 rounded"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="font-medium text-gray-800">
-                                      {cls.name}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      پایه {cls.grade} |{" "}
-                                      {getStudentsByClass(cls._id).length}{" "}
-                                      دانش‌آموز
-                                    </p>
-                                  </div>
-                                </label>
-                              ))}
-                              {filteredClasses.length === 0 && (
-                                <p className="text-center text-gray-500 py-4">
-                                  کلاسی یافت نشد
-                                </p>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-
-                  {/* Grades Selection */}
-                  {selectionMode === "grades" && (
-                    <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
-                      <SectionHeader
-                        title="پایه‌های تحصیلی"
-                        icon={Filter}
-                        count={availableGrades.length}
-                        section="grades"
-                        onSelectAll={selectAllGrades}
-                        onClearAll={clearAllGrades}
-                      />
-                      <AnimatePresence>
-                        {expandedSections.grades && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-gray-100 p-4"
-                          >
-                            <div className="space-y-2">
-                              {availableGrades.map((grade) => (
-                                <label
-                                  key={grade}
-                                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                                    selectedGrades.includes(grade)
-                                      ? "bg-blue-50 border border-blue-200"
-                                      : "hover:bg-gray-50 border border-transparent"
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedGrades.includes(grade)}
-                                    onChange={() => toggleGrade(grade)}
-                                    className="w-4 h-4 text-blue-600 rounded"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="font-medium text-gray-800">
-                                      پایه {grade}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {
-                                        classes.filter((c) => c.grade === grade)
-                                          .length
-                                      }{" "}
-                                      کلاس | {getStudentsByGrade(grade).length}{" "}
-                                      دانش‌آموز
-                                    </p>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
+                                        ? "bg-blue-50 border border-blue-200"
+                                        : "hover:bg-gray-50 border border-transparent"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        !!selectedTeachers.find(
+                                          (t) => t._id === teacher._id,
+                                        )
+                                      }
+                                      onChange={() => toggleTeacher(teacher)}
+                                      className="w-4 h-4 text-blue-600 rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-800">
+                                        {teacher.firstname} {teacher.lastname}
+                                      </p>
+                                      <p className="text-xs text-gray-500 flex items-center gap-2">
+                                        <Mail className="w-3 h-3" />
+                                        {teacher.email}
+                                        {teacher.phone && (
+                                          <>
+                                            <Phone className="w-3 h-3 mr-2" />
+                                            {teacher.phone}
+                                          </>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </label>
+                                ))}
+                                {filteredTeachers.length === 0 && (
+                                  <p className="text-center text-gray-500 py-4">
+                                    دبیری یافت نشد
+                                  </p>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
                       </AnimatePresence>
                     </div>
                   )}
@@ -1032,7 +1118,10 @@ export default function SendNotificationPage() {
                       <p className="text-blue-100 text-sm">تعداد گیرندگان</p>
                       <p className="text-3xl font-black">{recipientCount}</p>
                       <p className="text-blue-100 text-xs mt-1">
-                        {selectionMode === "all" && "همه کاربران مدرسه"}
+                        {selectionMode === "all" &&
+                          (recipientCount > 0
+                            ? `${selectedGrades.length} پایه، ${selectedClasses.length} کلاس، ${selectedStudents.length} دانش‌آموز، ${selectedTeachers.length} دبیر انتخاب شده`
+                            : "انتخابی — از آکاردئون‌ها انتخاب کنید")}
                         {selectionMode === "teachers" &&
                           `${selectedTeachers.length} دبیر انتخاب شده`}
                         {selectionMode === "students" &&
