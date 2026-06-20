@@ -115,8 +115,18 @@ export async function POST(request) {
       return Response.json({ error: "شناسه مدرسه الزامی است" }, { status: 400 });
     }
     
-    // Verify the user belongs to the specified school
-    if (requestingUser.school?.toString() !== schoolId) {
+    // Check if school exists
+    const service = await Service.findById(schoolId);
+    if (!service) {
+      return Response.json({ error: "مدرسه یافت نشد" }, { status: 404 });
+    }
+    
+    // Verify the requesting user is the creator/owner of this school.
+    // Note: the creator's User.school field is NOT set when a school is created
+    // (only Service.creator is stored), so ownership must be verified via the
+    // Service.creator reference — the same pattern used in
+    // /api/school/activate-subscription.
+    if (service.creator.toString() !== auth.userId) {
       return Response.json({ error: "شما دسترسی به ثبت درس در این مدرسه را ندارید" }, { status: 403 });
     }
     
@@ -127,12 +137,6 @@ export async function POST(request) {
     if (!finalTeacherId || !mongoose.Types.ObjectId.isValid(finalTeacherId)) {
       console.log("Invalid teacher ID:", finalTeacherId);
       return Response.json({ error: "دبیر معتبر الزامی است" }, { status: 400 });
-    }
-    
-    // Check if school exists
-    const service = await Service.findById(schoolId);
-    if (!service) {
-      return Response.json({ error: "مدرسه یافت نشد" }, { status: 404 });
     }
     
     // Check if teacher exists
