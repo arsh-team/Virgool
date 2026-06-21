@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from 'react';
 
 const heroImage = "/posters/hero.jpg";
-const registrationImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/106d99a17-8eca-427a-bfec-f0bbf035097e.png";
-const tuitionImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/192c8c5d7-77be-4d0d-9085-0a3c4f241948.png";
-const gradesImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/1d3e11626-8905-4321-8566-949f5160358c.png";
+const registrationImage = "/posters/1.png";
+const tuitionImage = "/posters/2.png";
+const gradesImage = "/posters/3.png";
 
 const ease = [0.76, 0, 0.24, 1];
 
@@ -146,8 +146,8 @@ function CinematicBackground({ mx, my }) {
 function HeroSection() {
   const router = useRouter();
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 600], [0, 120]);
-  const opacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const y = useTransform(scrollY, [500, 700], [0, 120]);
+  const opacity = useTransform(scrollY, [600, 700], [1, 0]);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -516,11 +516,42 @@ export default function CinematicHome() {
       style={{ direction: 'rtl' }}
     >
       <style jsx global>{`
-        html { scroll-behavior: smooth; }
-        body { background: #F0F4FF; }
-        ::-webkit-scrollbar { display: none; }
-        * { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+      html { scroll-behavior: smooth; }
+      body { background: #F0F4FF; }
+      
+      ::-webkit-scrollbar {
+        width: 18px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(240, 244, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        border: 1px solid rgba(90, 128, 251, 0.15);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, 
+          rgba(90, 128, 251, 0.9), 
+          rgba(42, 61, 122, 0.9)
+        );
+        border-radius: 8px;
+        border: 4px solid rgba(240, 244, 255, 0.9);
+        box-shadow: 
+          inset 0 2px 10px rgba(90, 128, 251, 0.3),
+          0 0 20px rgba(90, 128, 251, 0.1);
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, 
+          rgba(147, 197, 253, 0.95), 
+          rgba(69, 99, 194, 0.95)
+        );
+        box-shadow: 
+          inset 0 2px 15px rgba(90, 128, 251, 0.4),
+          0 0 30px rgba(90, 128, 251, 0.2);
+      }
+    `}</style>
 
       <ScrollProgress />
       <HeroSection />

@@ -4,7 +4,6 @@ import Class from "../../../../models/Class";
 import Subject from "../../../../models/Subject";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import crypto from "crypto";
 
 const SECRET = process.env.JWT_SECRET;
 if (!SECRET) throw new Error("JWT_SECRET is not configured");
@@ -186,10 +185,10 @@ export async function POST(request) {
       lastname,
       email,
       phone,
-      password,
       nationalCode,
       address,
     } = body;
+    const finalPassword = nationalCode || "12345678";
 
     if (!schoolId || !mongoose.Types.ObjectId.isValid(schoolId)) {
       return Response.json(
@@ -302,7 +301,7 @@ export async function POST(request) {
         lastname,
         phone: phone || "",
         nationalCode: nationalCode || undefined,
-        password: password || crypto.randomBytes(8).toString("hex"),
+        password: finalPassword,
         schoolRole: role,
         type: "user",
         school: new mongoose.Types.ObjectId(schoolId),
