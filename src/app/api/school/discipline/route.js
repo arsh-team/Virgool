@@ -221,15 +221,21 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url);
     const disciplineId = searchParams.get("id");
     
-    const discipline = await Discipline.findByIdAndDelete(disciplineId);
+    // SECURITY FIX: First find the record, then check authorization BEFORE deleting
+    const discipline = await Discipline.findById(disciplineId);
     if (!discipline) {
       return Response.json({ error: "مورد انضباطی یافت نشد" }, { status: 404 });
     }
 
-    // SECURITY FIX: بررسی اینکه مورد انضباطی مربوط به مدرسه همین کاربر باشد
-    if (requestingUser.type !== 'creator' && discipline.school.toString() !== requestingUser.school?.toString()) {
+    // Check that the discipline belongs to the user's school
+    const isCreatorOfSchool = requestingUser.type === 'creator';
+    const isTeacherInSchool = requestingUser.schoolRole === 'teacher' && discipline.school.toString() === requestingUser.school?.toString();
+    if (!isCreatorOfSchool && !isTeacherInSchool) {
       return Response.json({ error: "شما فقط می‌توانید موارد انضباطی مدرسه خود را حذف کنید" }, { status: 403 });
     }
+
+    // Only proceed with deletion after authorization check
+    await Discipline.findByIdAndDelete(disciplineId);
 
     return Response.json({ message: "مورد انضباطی با موفقیت حذف شد" });
   } catch (error) {

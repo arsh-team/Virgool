@@ -52,6 +52,8 @@ export async function POST(request, { params }) {
     }
     
     if (service.maxCapacity > 0) {
+      // TODO: Use MongoDB transaction for atomic capacity check + enrollment
+      // Current implementation has a race condition under concurrent requests
       const enrolledCount = await Enrollment.countDocuments({ service: serviceId });
       if (enrolledCount >= service.maxCapacity) {
         return new Response(

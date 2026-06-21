@@ -9,6 +9,18 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../../../lib/auth";
 import mongoose from "mongoose";
 
+// Helper function to calculate the current Iranian academic year dynamically
+function getCurrentAcademicYear() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  // Iranian academic year typically starts in September (Shahrivar/Mehr)
+  // If we're before September, we're in the second half of the previous academic year
+  const isBeforeAcademicYear = now.getMonth() < 8; // Before September (0-indexed)
+  // Approximate Jalali year from Gregorian
+  const jalaliYear = isBeforeAcademicYear ? currentYear - 622 : currentYear - 621;
+  return `${jalaliYear}-${jalaliYear + 1}`;
+}
+
 async function authenticate(request) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -41,7 +53,7 @@ export async function GET(request) {
     const schoolId = searchParams.get("schoolId");
     const classId = searchParams.get("classId");
     let studentId = searchParams.get("studentId");
-    const academicYear = searchParams.get("academicYear") || "1404-1405";
+    const academicYear = searchParams.get("academicYear") || getCurrentAcademicYear();
     
     console.log("=== GET Student Payments ===");
     console.log("User role:", auth.user.schoolRole);
@@ -84,7 +96,7 @@ export async function GET(request) {
     
     // جستجوی وضعیت مالی دانش‌آموز
     let payments = await StudentPayment.find(query)
-      .populate("student", "firstname lastname email phone nationalCode")
+      .populate("student", "firstname lastname email phone")
       .populate("class", "name grade")
       .populate("schoolFee", "name feeItems totalAmount")
       .lean();
@@ -173,7 +185,7 @@ export async function POST(request) {
     let studentPayment = await StudentPayment.findOne({
       student: studentId,
       school: schoolId,
-      academicYear: "1404-1405"
+      academicYear: body.academicYear || getCurrentAcademicYear()
     });
     
     const schoolFee = await SchoolFee.findById(schoolFeeId);
@@ -210,7 +222,7 @@ export async function POST(request) {
         class: classId,
         school: schoolId,
         schoolFee: schoolFeeId,
-        academicYear: "1404-1405",
+        academicYear: body.academicYear || getCurrentAcademicYear(),
         paymentItems: preparedPaymentItems,
         appliedDiscount: appliedDiscount || 0,
         discountReason: discountReason || '',

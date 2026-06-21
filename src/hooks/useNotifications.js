@@ -5,7 +5,7 @@ export function useNotifications() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         setUnreadCount(0);
         return;
@@ -31,7 +31,7 @@ export function useNotifications() {
   }, []);
   const markAsRead = useCallback(async (notificationId = null) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch('/api/notifications/read', {
         method: 'PUT',
         headers: {

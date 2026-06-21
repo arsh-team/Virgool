@@ -11,7 +11,7 @@ const assignmentSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     dueDate: { type: Date },
-    points: { type: Number, default: 0, min: 0 },
+    points: { type: Number, default: 0, min: 0, max: 1000 },
     isPublished: { type: Boolean, default: true },
   },
   { timestamps: true }

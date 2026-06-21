@@ -1,6 +1,7 @@
 import { connectDB } from "../../../lib/db";
 import Score from "../../../models/Score";
 import User from "../../../models/User";
+import Service from "../../../models/Service";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { getJwtSecret } from "../../../lib/auth";
@@ -44,15 +45,29 @@ export async function GET(request) {
     }
 
     if (requestingUser.type === 'creator') {
+      // Creator can only access scores for their own services
+      const creatorServices = await Service.find({ fromUserId: decoded.id }).select("_id").lean();
+      const creatorServiceIds = creatorServices.map(s => s._id.toString());
+      
       if (userId) {
         query.user = new mongoose.Types.ObjectId(userId);
       }
+      
+      if (serviceId) {
+        // Verify the service belongs to this creator
+        if (!creatorServiceIds.includes(serviceId)) {
+          return Response.json({ error: "شما دسترسی به نمرات این خدمت ندارید" }, { status: 403 });
+        }
+        query.service = new mongoose.Types.ObjectId(serviceId);
+      } else {
+        // If no specific service requested, limit to creator's own services
+        query.service = { $in: creatorServiceIds.map(id => new mongoose.Types.ObjectId(id)) };
+      }
     } else {
       query.user = new mongoose.Types.ObjectId(decoded.id);
-    }
-
-    if (serviceId) {
-      query.service = new mongoose.Types.ObjectId(serviceId);
+      if (serviceId) {
+        query.service = new mongoose.Types.ObjectId(serviceId);
+      }
     }
 
     const scores = await Score.find(query)

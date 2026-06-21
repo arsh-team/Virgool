@@ -3,9 +3,12 @@
 
 import { connectDB } from "./db";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import { getJwtSecret } from "./auth";
 import User from "../models/User";
 import Class from "../models/Class";
 import Service from "../models/Service";
+import Subject from "../models/Subject";
 import { 
   SUBSCRIPTION_TIERS, 
   TIER_LIMITS, 
@@ -53,9 +56,11 @@ export function isSubscriptionActive(entity) {
   if (!entity) return false;
   const tier = entity.subscriptionTier || entity.subscriptionPlan;
   if (!tier || tier === 'BRONZE') {
-    if (!entity.subscriptionExpiry) return false;
+    if (!entity.subscriptionExpiry) return true; // BRONZE (free tier) always active
+    return new Date(entity.subscriptionExpiry) > new Date();
   }
-  if (!entity.subscriptionExpiry) return true;
+  // For paid tiers (SILVER, GOLD), expiry is required
+  if (!entity.subscriptionExpiry) return false;
   return new Date(entity.subscriptionExpiry) > new Date();
 }
 
@@ -101,7 +106,7 @@ export async function countTeachers(schoolId) {
     const teacherIds = schoolClasses
       .flatMap(cls => [cls.teacher, cls.assistantTeacher])
       .filter(Boolean);
-    const schoolSubjects = await (await import('../models/Subject')).default.find({ school: schoolId }).select("teacher").lean();
+    const schoolSubjects = await Subject.find({ school: schoolId }).select("teacher").lean();
     teacherIds.push(...schoolSubjects.map(s => s.teacher).filter(Boolean));
     const uniqueTeacherIds = [...new Set(teacherIds.map(id => id.toString()))];
     query.$or = [
@@ -297,9 +302,7 @@ export async function withSubscriptionCheck(request, resourceType, handler) {
       );
     }
     
-    const token = authHeader.replace("Bearer ", "");
-    const { getJwtSecret } = await import("./auth");
-    const jsonwebtoken = await import('jsonwebtoken');
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
     let SECRET;
     try {
       SECRET = getJwtSecret();
@@ -312,7 +315,7 @@ export async function withSubscriptionCheck(request, resourceType, handler) {
     
     let decoded;
     try {
-      decoded = jsonwebtoken.default.verify(token, SECRET);
+      decoded = jwt.verify(token, SECRET, { algorithms: ["HS256"] });
     } catch {
       return Response.json(
         { error: "توکن نامعتبر است" },
@@ -334,6 +337,13 @@ export async function withSubscriptionCheck(request, resourceType, handler) {
     if (!schoolId) {
       return Response.json(
         { error: "شناسه مدرسه الزامی است" },
+        { status: 400 }
+      );
+    }
+    
+    if (!mongoose.Types.ObjectId.isValid(schoolId)) {
+      return Response.json(
+        { error: "شناسه مدرسه نامعتبر است" },
         { status: 400 }
       );
     }

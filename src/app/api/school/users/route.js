@@ -207,9 +207,17 @@ export async function POST(request) {
       );
     }
 
+    if (!role || !["student", "teacher"].includes(role)) {
+      return Response.json(
+        { error: "نقش کاربر (student یا teacher) الزامی است" },
+        { status: 400 },
+      );
+    }
     if (!email) {
       return Response.json({ error: "ایمیل الزامی است" }, { status: 400 });
     }
+    // نرمال‌سازی ایمیل
+    const normalizedEmail = email.trim().toLowerCase();
     if (!firstname || !lastname) {
       return Response.json(
         { error: "نام و نام خانوادگی الزامی است" },
@@ -260,7 +268,7 @@ export async function POST(request) {
       );
     }
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: normalizedEmail }).select('+password');
 
     if (user) {
       user.schoolRole = role;
@@ -293,10 +301,13 @@ export async function POST(request) {
         }
       }
       if (phone) user.phone = phone;
+      // عبور از مشکل select:false برای رمز عبور - رمز عبور قبلی حفظ می‌شود
+      // اگر رمز عبور جدیدی مشخص نشده، رمز قبلی بدون تغییر باقی می‌ماند
+      if (password) user.password = password;
       await user.save();
     } else {
       user = new User({
-        email,
+        email: normalizedEmail,
         firstname,
         lastname,
         phone: phone || "",
@@ -344,7 +355,12 @@ export async function POST(request) {
       }
       return Response.json({ error: "اطلاعات وارد شده تکراری است" }, { status: 400 });
     }
-    return Response.json({ error: "خطا در ثبت کاربر" }, { status: 500 });
+    // نمایش خطای اعتبارسنجی Mongoose
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return Response.json({ error: messages.join(' | ') }, { status: 400 });
+    }
+    return Response.json({ error: `خطا در ثبت کاربر: ${error.message || 'خطای ناشناخته'}` }, { status: 500 });
   }
 }
 
@@ -400,7 +416,10 @@ export async function PUT(request) {
     if (body.phone) user.phone = body.phone;
 
     if (body.password) {
-      user.password = body.password;
+      // TODO: Current password verification should be required before allowing password change.
+      // Currently any admin can change any user's password without verifying the current password.
+      // This should be enhanced to require currentPassword for non-admin users.
+      user.password = body.password; // TODO: Password should be hashed before saving. Currently stored in plaintext.
     }
     if (body.schoolId && mongoose.Types.ObjectId.isValid(body.schoolId)) {
       user.school = new mongoose.Types.ObjectId(body.schoolId);
