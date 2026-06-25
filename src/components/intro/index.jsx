@@ -5,17 +5,10 @@ import { Rocket, Target, Award, Star, TrendingUp, ArrowRight, Play, Sparkles, Bo
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from 'react';
 
-<<<<<<< HEAD
 const heroImage = "/posters/hero.jpg";
 const registrationImage = "/posters/1.png";
 const tuitionImage = "/posters/2.png";
 const gradesImage = "/posters/3.png";
-=======
-const heroImage = "posters/hero.jpg";
-const registrationImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/106d99a17-8eca-427a-bfec-f0bbf035097e.png";
-const tuitionImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/192c8c5d7-77be-4d0d-9085-0a3c4f241948.png";
-const gradesImage = "https://image.qwenlm.ai/public_source/cf8bf794-30b1-4efb-b998-44ad3146f05d/1d3e11626-8905-4321-8566-949f5160358c.png";
->>>>>>> 350d008c97c808b8b7a2d7492fb0ff6d6aa5b37b
 
 const ease = [0.76, 0, 0.24, 1];
 
