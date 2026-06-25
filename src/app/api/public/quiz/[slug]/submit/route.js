@@ -69,7 +69,7 @@ export async function POST(request, { params }) {
       );
     }
     
-    const { answers, isAutoSubmit = false } = body;
+    const { answers, isAutoSubmit: clientAutoSubmit = false } = body;
     
     if (!answers || !Array.isArray(answers)) {
       return new Response(
@@ -108,9 +108,7 @@ export async function POST(request, { params }) {
     const timeLimitSeconds = quiz.timeLimit * 60;
     const isExpired = timeSpent > timeLimitSeconds;
     
-    if (isExpired) {
-      isAutoSubmit = true; // Server-side override: force auto-submit on expired quizzes
-    }
+    const isAutoSubmit = isExpired || clientAutoSubmit;
     
     // Calculate score
     let totalPoints = 0;
