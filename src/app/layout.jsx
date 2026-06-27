@@ -7,8 +7,8 @@ import BottomNav from "../components/bottomNav";
 import QuizExpireJob from "../components/QuizExpireJob";
 
 export const metadata = {
-  title: "لرنیا",
-  description: "با هوش مصنوعی بهترین خودت شو",
+  title: "ویرگول",
+  description: "مدیریت هوشمند مدرسه"
 };
 
 // eslint-disable-next-line react/prop-types

@@ -238,17 +238,6 @@ function HeroSection() {
               </div>
             </div>
           </FloatingPill>
-          <FloatingPill className="top-8 right-[-2%] z-20" delay={1.8}>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-[#5A80FB]/10 rounded-full flex items-center justify-center">
-                <Users className="w-3.5 h-3.5 text-[#2A3D7A]" />
-              </div>
-              <div>
-                <div className="text-[9px] text-[#5A80FB] font-medium">موسسه فعال</div>
-                <div className="text-[13px] font-black text-[#2A3D7A]">+۵۰۰</div>
-              </div>
-            </div>
-          </FloatingPill>
           <FloatingPill className="bottom-[-12px] right-[12%] z-20" delay={2.0}>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-[#5A80FB]/10 rounded-full flex items-center justify-center">
@@ -327,7 +316,7 @@ function StoryChapter({ chapter, chapterEn, image, title, description, icon: Ico
                 <span className="text-[9px] font-semibold tracking-wider text-[#2A3D7A] uppercase">{title}</span>
               </div>
               <motion.div style={{ y: imgY }} className="w-full">
-                <img src={image} alt={title} className="w-full h-72 md:h-96 object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+                <img src={image} alt={title} className="w-full h-72 md:h-96 object-contain group-hover:scale-[1.02] transition-transform duration-700" />
               </motion.div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#2A3D7A]/20 to-transparent pointer-events-none" />
             </div>
@@ -346,7 +335,7 @@ function StoryChapter({ chapter, chapterEn, image, title, description, icon: Ico
 function StatsBento() {
   const stats = [
     { value: '۹۹.۹٪', label: 'آپتایم تضمین شده', desc: 'سرورهای ابری پایدار و مقیاس‌پذیر', icon: Zap, wide: true },
-    { value: '+۵۰۰', label: 'موسسه همسفر', desc: 'از سراسر ایران', icon: Users, dark: true },
+    { value: '+۱۰۰۰', label: 'دانش آموز همسفر', desc: 'از سراسر ایران', icon: Users, dark: true },
     { value: '۱۰۰٪', label: 'بدون کاغذ', desc: 'حذف کامل بروکراسی کاغذی', icon: CheckCircle },
     { value: '۷۵٪', label: 'صرفه‌جویی زمانی', desc: 'در فرایندهای اداری روزانه', icon: Clock, wide: true },
     { value: '۴.۹', label: 'امتیاز کاربران', desc: 'رضایت‌مندی بالای ۹۸٪', icon: Star },
@@ -410,12 +399,12 @@ function StatsBento() {
 /* ── بخش ویژگی‌ها ── */
 function FeatureStrip() {
   const features = [
-    { icon: Zap, title: 'ثبت‌نام هوشمند', desc: 'تعیین سطح خودکار با AI' },
-    { icon: Shield, title: 'پرداخت امن', desc: 'درگاه بانکی یکپارچه' },
-    { icon: BarChart3, title: 'گزارش‌دهی لحظه‌ای', desc: 'داشبورد تحلیلی زنده' },
-    { icon: Users, title: 'مدیریت کادر', desc: 'برنامه‌ریزی درسی خودکار' },
-    { icon: BookOpen, title: 'کارنامه دیجیتال', desc: 'ارزیابی تعاملی پیشرفته' },
-    { icon: Clock, title: 'حضور و غیاب', desc: 'ثبت لحظه‌ای بی‌درنگ' },
+    { icon: Zap, title: 'مدیریت هوشمند', desc: 'کاغذ را حذف کنید، دیجیتالی باشید!' },
+    { icon: Shield, title: 'مدیریت مالی', desc: 'ثبت و مدیریت پرداختی ها' },
+    { icon: BarChart3, title: 'گزارش‌دهی پیشرفته', desc: 'داشبورد تحلیلی پیشرفته' },
+    { icon: Users, title: 'مدیریت کادر', desc: ' درسی خودکار' },
+    { icon: BookOpen, title: 'کارنامه دیجیتال', desc: 'ارزیابی دقیق و لوح های تقدیر مدرن' },
+    { icon: Clock, title: 'آزمون آنلاین', desc: 'بدون دردسر، آزمون های خود را برگزار کنید' },
   ];
   return (
     <section className="py-24 bg-[#2A3D7A] overflow-hidden relative">
@@ -477,25 +466,25 @@ function FinalCTA() {
               viewport={{ once: true }} transition={{ duration: 0.8, ease }}>
               <div className="inline-flex items-center gap-2 mb-8">
                 <Rocket className="w-4 h-4 text-[#5A80FB]" strokeWidth={1.5} />
-                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-[#5A80FB]">آماده پرواز</span>
+                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-[#5A80FB]">آماده پرواز به آینده</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-black tracking-[-0.04em] text-[#F0F4FF] mb-6 leading-none">
-                داستان آموزشگاه<br />شما از اینجا آغاز می‌شود
+                داستان مدرسه<br />شما از اینجا آغاز می‌شود
               </h2>
               <p className="text-[#5A80FB]/70 text-sm font-light max-w-md mx-auto leading-relaxed mb-12">
-                با ویرگول، آموزشگاه خود را به فضایی شفاف، دیجیتال و پویا تبدیل کنید. ثبت‌نام رایگان، بدون نیاز به کارت بانکی.
+                با ویرگول، مدرسه خود را به فضایی شفاف، دیجیتال و پویا تبدیل کنید. باهم، برای ایرانی هوشمند
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   onClick={() => router.push('/login')}
                   className="group flex items-center gap-3 bg-[#5A80FB] hover:bg-[#93C5FD] text-[#2A3D7A] px-8 py-4 rounded-full text-[11px] font-black tracking-[0.2em] uppercase transition-all active:scale-95 shadow-[0_8px_32px_rgba(90,128,251,0.4)]"
                 >
-                  ثبت فصل جدید
+                  ثبت نام
                   <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
                 </button>
                 <button className="text-[10px] font-semibold tracking-wider text-[#5A80FB] hover:text-[#F0F4FF] transition-colors flex items-center gap-2">
                   <span>مشاوره رایگان</span>
-                  <span className="w-4 h-[1px] bg-current" />
+                  <span className="w-4 h-px bg-current" />
                 </button>
               </div>
             </motion.div>
@@ -562,7 +551,7 @@ export default function CinematicHome() {
           chapter="اول" chapterEn="Chapter One"
           image={registrationImage}
           title="ثبت‌نام، جریانی روان"
-          description="پذیرش هوشمند با تعیین سطح خودکار. حذف کامل فرم‌های فیزیکی و ایجاد تجربه‌ای دیجیتال، سریع و خوشایند برای دانش‌آموزان و کادر اداری شما."
+          description=" حذف کامل فرم‌های فیزیکی و ایجاد تجربه‌ای دیجیتال، سریع و خوشایند برای دانش‌آموزان و کادر اداری شما"
           icon={Target}
           reverse={false}
           accent="rgba(90,128,251,0.15)"
