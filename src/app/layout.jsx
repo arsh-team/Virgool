@@ -3,8 +3,13 @@
 import "./globals.css";
 import { Suspense } from "react";
 import { CartProvider } from "../hooks/useCart";
-import BottomNav from "../components/bottomNav";
+import dynamic from "next/dynamic";
 import QuizExpireJob from "../components/QuizExpireJob";
+
+const BottomNav = dynamic(() => import("../components/bottomNav"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export const metadata = {
   title: "ویرگول",

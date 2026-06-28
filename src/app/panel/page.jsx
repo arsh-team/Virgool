@@ -5248,13 +5248,18 @@ export default function SchoolManagement() {
         });
       }
       if (res.ok) {
+        const responseData = await res.json();
         await fetchTeachers();
         await fetchClasses();
         setShowTeacherModal(false);
         setEditingItem(null);
-        setSuccess(
-          editingItem ? "دبیر با موفقیت ویرایش شد" : "دبیر با موفقیت ثبت شد",
-        );
+        if (responseData.alreadyExists) {
+          setSuccess(responseData.message);
+        } else {
+          setSuccess(
+            editingItem ? "دبیر با موفقیت ویرایش شد" : "دبیر با موفقیت ثبت شد",
+          );
+        }
         setTimeout(() => setSuccess(""), 3000);
       } else {
         const errorData = await res.json();
@@ -5298,16 +5303,21 @@ export default function SchoolManagement() {
         });
       }
       if (res.ok) {
+        const responseData = await res.json();
         await fetchStudents();
         await fetchClasses();
         setShowStudentModal(false);
         setEditingItem(null);
         setSelectedStudent(null);
-        setSuccess(
-          editingItem
-            ? "دانش آموز با موفقیت ویرایش شد"
-            : "دانش آموز با موفقیت ثبت شد",
-        );
+        if (responseData.alreadyExists) {
+          setSuccess(responseData.message);
+        } else {
+          setSuccess(
+            editingItem
+              ? "دانش آموز با موفقیت ویرایش شد"
+              : "دانش آموز با موفقیت ثبت شد",
+          );
+        }
         setTimeout(() => setSuccess(""), 3000);
       } else {
         const errorData = await res.json();
@@ -6446,7 +6456,7 @@ export default function SchoolManagement() {
   // تب Students
   const StudentsTab = () => (
     <div className="space-y-5">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             مدیریت دانش آموزان
@@ -6455,20 +6465,22 @@ export default function SchoolManagement() {
             ثبت و مدیریت دانش آموزان مدرسه
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={printPasswords}
-            className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer"
+            className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer text-sm"
           >
             <Printer className="w-4 h-4" />
-            چاپ رمزها
+            <span className="hidden sm:inline">چاپ رمزها</span>
+            <span className="sm:hidden">رمزها</span>
           </button>
           <button
             onClick={() => exportStudentsToCSV()}
-            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md"
+            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md text-sm"
           >
             <Download className="w-4 h-4" />
-            خروجی CSV
+            <span className="hidden sm:inline">خروجی CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
           <GradientButton
             onClick={() => {
@@ -6477,11 +6489,14 @@ export default function SchoolManagement() {
             }}
             icon={UserPlus}
           >
-            دانش آموز جدید
+            <span className="hidden sm:inline">دانش آموز جدید</span>
+            <span className="sm:hidden">جدید</span>
           </GradientButton>
         </div>
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full bg-white rounded-2xl overflow-hidden shadow-xl">
           <thead>
             <tr className="bg-gray-100">
@@ -6547,6 +6562,64 @@ export default function SchoolManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {students.map((student) => (
+          <div
+            key={student._id}
+            className="bg-white rounded-2xl shadow-xl p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-gray-800 text-lg">
+                  {student.firstname} {student.lastname}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  کلاس: {student.studentInfo?.enrolledClass?.name || "ثبت نشده"}
+                </p>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleViewStudent(student)}
+                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                  title="مشاهده جزئیات"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleEditStudent(student)}
+                  className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
+                  title="ویرایش"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteStudent(student._id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                  title="حذف"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              {student.phone && (
+                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {student.phone}
+                </span>
+              )}
+              {student.studentInfo?.parentName && (
+                <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-lg">
+                  والدین: {student.studentInfo.parentName}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {students.length === 0 && (
         <div className="text-center py-16 bg-white rounded-2xl shadow-xl">
           <Users className="w-20 h-20 mx-auto mb-4 text-gray-300" />
@@ -6564,7 +6637,7 @@ export default function SchoolManagement() {
   // تب Discipline
   const DisciplineTab = () => (
     <div className="space-y-5">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-black bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
             دفتر انضباطی
@@ -6573,30 +6646,35 @@ export default function SchoolManagement() {
             ثبت و مدیریت موارد انضباطی دانش آموزان
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={printDisciplineReport}
-            className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer"
+            className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer text-sm"
           >
             <Printer className="w-4 h-4" />
-            چاپ گزارش
+            <span className="hidden sm:inline">چاپ گزارش</span>
+            <span className="sm:hidden">چاپ</span>
           </button>
           <button
             onClick={exportDisciplinesToCSV}
-            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer"
+            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md cursor-pointer text-sm"
           >
             <Download className="w-4 h-4" />
-            خروجی CSV
+            <span className="hidden sm:inline">خروجی CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
           <GradientButton
             onClick={() => setShowDisciplineModal(true)}
             icon={Plus}
           >
-            ثبت مورد جدید
+            <span className="hidden sm:inline">ثبت مورد جدید</span>
+            <span className="sm:hidden">جدید</span>
           </GradientButton>
         </div>
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full bg-white rounded-2xl overflow-hidden shadow-xl">
           <thead>
             <tr className="bg-gray-100">
@@ -6681,6 +6759,66 @@ export default function SchoolManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {disciplines.map((discipline) => (
+          <div
+            key={discipline._id}
+            className="bg-white rounded-2xl shadow-xl p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-gray-800">
+                  {discipline.student?.firstname} {discipline.student?.lastname}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">{discipline.title}</p>
+              </div>
+              <button
+                onClick={() => handleDeleteDiscipline(discipline._id)}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span
+                className={`px-3 py-1 rounded-full font-bold shadow-md ${discipline.type === "warning" ? "bg-yellow-500 text-white" : discipline.type === "probation" ? "bg-orange-500 text-white" : discipline.type === "suspension" ? "bg-red-500 text-white" : discipline.type === "expulsion" ? "bg-red-800 text-white" : "bg-green-500 text-white"}`}
+              >
+                {discipline.type === "warning"
+                  ? "اخطار"
+                  : discipline.type === "probation"
+                    ? "تذکر کتبی"
+                    : discipline.type === "suspension"
+                      ? "تعلیق"
+                      : discipline.type === "expulsion"
+                        ? "اخراج"
+                        : "تشویق"}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full font-bold ${discipline.severity === "low" ? "bg-blue-100 text-blue-700" : discipline.severity === "medium" ? "bg-yellow-100 text-yellow-700" : discipline.severity === "high" ? "bg-orange-100 text-orange-700" : "bg-red-100 text-red-700"}`}
+              >
+                {discipline.severity === "low"
+                  ? "کم"
+                  : discipline.severity === "medium"
+                    ? "متوسط"
+                    : discipline.severity === "high"
+                      ? "شديد"
+                      : "بحرانی"}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full font-bold ${discipline.isResolved ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+              >
+                {discipline.isResolved ? "رفع شده" : "در انتظار"}
+              </span>
+              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                {new Date(discipline.date).toLocaleDateString("fa-IR")}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {disciplines.length === 0 && (
         <div className="text-center py-16 bg-white rounded-2xl shadow-xl">
           <Gavel className="w-20 h-20 mx-auto mb-4 text-gray-300" />
@@ -8188,69 +8326,69 @@ export default function SchoolManagement() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex gap-2 overflow-x-auto bg-white rounded-2xl p-2 mb-8 shadow-2xl"
+                className="flex gap-2 overflow-x-auto bg-white rounded-2xl p-2 mb-8 shadow-2xl whitespace-nowrap"
               >
                 <button
                   onClick={() => setActiveTab("dashboard")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "dashboard" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "dashboard" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <Home className="w-5 h-5" />
+                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
                   داشبورد
                 </button>
                 <button
                   onClick={() => setActiveTab("classes")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "classes" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "classes" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <School2 className="w-5 h-5" />
+                  <School2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   کلاس ها
                 </button>
                 <button
                   onClick={() => setActiveTab("subjects")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "subjects" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "subjects" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <BookOpen className="w-5 h-5" />
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                   دروس
                 </button>
                 <button
                   onClick={() => setActiveTab("teachers")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "teachers" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "teachers" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <GraduationCap className="w-5 h-5" />
+                  <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
                   دبیران
                 </button>
                 <button
                   onClick={() => setActiveTab("students")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "students" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "students" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <Users className="w-5 h-5" />
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                   دانش آموزان
                 </button>
                 <button
                   onClick={() => setActiveTab("scores")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "scores" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "scores" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <ClipboardList className="w-5 h-5" />
+                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
                   نمرات ماهانه
                 </button>
                 <button
                   onClick={() => setActiveTab("discipline")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "discipline" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "discipline" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <Gavel className="w-5 h-5" />
+                  <Gavel className="w-4 h-4 sm:w-5 sm:h-5" />
                   انضباط
                 </button>
                 <button
                   onClick={() => setActiveTab("finance")}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "finance" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base ${activeTab === "finance" ? "bg-blue-500 text-white shadow-xl" : "text-gray-600 bg-gray-100"}`}
                 >
-                  <Wallet className="w-5 h-5" />
+                  <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
                   مالی
                 </button>
                 <button
                   onClick={() => router.push("/panel/subscription")}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all text-gray-600 bg-gray-100 hover:bg-blue-50"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-bold transition-all text-sm sm:text-base text-gray-600 bg-gray-100 hover:bg-blue-50"
                 >
-                  <CreditCard className="w-5 h-5" />
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
                   اشتراک
                 </button>
               </motion.div>

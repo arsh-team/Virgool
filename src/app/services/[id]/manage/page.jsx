@@ -1919,9 +1919,14 @@ export default function ClassManagement() {
       body: JSON.stringify(payload),
     });
     if (res.ok) {
+      const responseData = await res.json();
       await fetchClassData();
       setShowStudentModal(false);
-      setSuccess("دانش‌آموز با موفقیت اضافه شد");
+      if (responseData.alreadyExists) {
+        setSuccess(responseData.message);
+      } else {
+        setSuccess("دانش‌آموز با موفقیت اضافه شد");
+      }
       setTimeout(() => setSuccess(""), 3000);
     } else {
       const errorData = await res.json();
@@ -2328,20 +2333,21 @@ export default function ClassManagement() {
   // Students Tab
   const StudentsTab = () => (
     <div className="space-y-5">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
             مدیریت دانش‌آموزان
           </h2>
           <p className="text-gray-500 text-sm">مدیریت دانش‌آموزان این کلاس</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md"
+            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-md text-sm"
           >
             <Download className="w-4 h-4" />
-            خروجی CSV
+            <span className="hidden sm:inline">خروجی CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
           <GradientButton
             onClick={() => {
@@ -2350,11 +2356,14 @@ export default function ClassManagement() {
             }}
             icon={UserPlus}
           >
-            دانش‌آموز جدید
+            <span className="hidden sm:inline">دانش‌آموز جدید</span>
+            <span className="sm:hidden">جدید</span>
           </GradientButton>
         </div>
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full bg-white rounded-2xl overflow-hidden shadow-xl">
           <thead>
             <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
@@ -2404,6 +2413,50 @@ export default function ClassManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {students.map((s) => (
+          <div
+            key={s._id}
+            className="bg-white rounded-2xl shadow-xl p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-gray-800 text-lg">
+                  {s.firstname} {s.lastname}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {s.phone || "بدون شماره تماس"}
+                </p>
+                {s.studentInfo?.parentName && (
+                  <p className="text-sm text-gray-500">
+                    والدین: {s.studentInfo.parentName}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    setSelectedStudent(s);
+                    setShowStudentDetailsModal(true);
+                  }}
+                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteStudent(s._id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {students.length === 0 && (
         <div className="text-center py-16 bg-white/80 rounded-2xl shadow-xl">
           <Users className="w-20 h-20 mx-auto mb-4 text-gray-300" />
@@ -2808,7 +2861,7 @@ export default function ClassManagement() {
   // Discipline Tab
   const DisciplineTab = () => (
     <div className="space-y-5">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-black bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text">
             دفتر انضباطی کلاس
@@ -2819,10 +2872,13 @@ export default function ClassManagement() {
           onClick={() => setShowDisciplineModal(true)}
           icon={Plus}
         >
-          ثبت مورد جدید
+          <span className="hidden sm:inline">ثبت مورد جدید</span>
+          <span className="sm:hidden">جدید</span>
         </GradientButton>
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full bg-white rounded-2xl overflow-hidden shadow-xl">
           <thead>
             <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
@@ -2908,13 +2964,87 @@ export default function ClassManagement() {
             ))}
           </tbody>
         </table>
-        {disciplines.length === 0 && (
-          <div className="text-center py-16 bg-white/80 rounded-2xl shadow-xl">
-            <Gavel className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-bold">هیچ مورد انضباطی ثبت نشده است</h3>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {disciplines.map((d) => (
+          <div
+            key={d._id}
+            className="bg-white rounded-2xl shadow-xl p-4 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-gray-800">
+                  {d.student?.firstname} {d.student?.lastname}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">{d.title}</p>
+              </div>
+              <button
+                onClick={() => handleDeleteDiscipline(d._id)}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span
+                className={`px-3 py-1 rounded-full font-bold shadow-md ${
+                  d.type === "warning"
+                    ? "bg-yellow-500 text-white"
+                    : d.type === "probation"
+                      ? "bg-orange-500 text-white"
+                      : d.type === "suspension"
+                        ? "bg-red-500 text-white"
+                        : "bg-green-500 text-white"
+                }`}
+              >
+                {d.type === "warning"
+                  ? "اخطار"
+                  : d.type === "probation"
+                    ? "تذکر"
+                    : d.type === "suspension"
+                      ? "تعلیق"
+                      : "تشویق"}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full font-bold ${
+                  d.severity === "low"
+                    ? "bg-blue-100 text-blue-700"
+                    : d.severity === "medium"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
+                }`}
+              >
+                {d.severity === "low"
+                  ? "کم"
+                  : d.severity === "medium"
+                    ? "متوسط"
+                    : "شدید"}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full font-bold ${
+                  d.isResolved
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {d.isResolved ? "رفع شده" : "در انتظار"}
+              </span>
+              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                {new Date(d.date).toLocaleDateString("fa-IR")}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {disciplines.length === 0 && (
+        <div className="text-center py-16 bg-white/80 rounded-2xl shadow-xl">
+          <Gavel className="w-20 h-20 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-xl font-bold">هیچ مورد انضباطی ثبت نشده است</h3>
+        </div>
+      )}
     </div>
   );
 

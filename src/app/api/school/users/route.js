@@ -241,17 +241,6 @@ export async function POST(request) {
       );
     }
 
-    // بررسی کدملی تکراری
-    if (nationalCode) {
-      const existingNationalCode = await User.findOne({ nationalCode });
-      if (existingNationalCode) {
-        return Response.json(
-          { error: "کدملی وارد شده قبلاً ثبت شده است" },
-          { status: 400 },
-        );
-      }
-    }
-
     // ساخت studentInfo و teacherInfo از فیلدهای تخت فرم
     const studentInfo = buildStudentInfo(body);
     const teacherInfo = buildTeacherInfo(body);
@@ -266,6 +255,44 @@ export async function POST(request) {
       studentInfo.enrolledClass = new mongoose.Types.ObjectId(
         studentInfo.enrolledClass,
       );
+    }
+
+    // بررسی کدملی تکراری - اگر کاربری با کدملی وجود داشت، همان کاربر را به مدرسه اضافه کن
+    if (nationalCode) {
+      const existingByNationalCode = await User.findOne({ nationalCode }).select('+password');
+      if (existingByNationalCode) {
+        existingByNationalCode.schoolRole = role;
+        existingByNationalCode.school = new mongoose.Types.ObjectId(schoolId);
+        if (role === "teacher" && Object.keys(teacherInfo).length > 0) {
+          existingByNationalCode.teacherInfo = { ...existingByNationalCode.teacherInfo?.toObject?.() || {}, ...teacherInfo };
+        } else if (role === "student" && Object.keys(studentInfo).length > 0) {
+          const previousClass = existingByNationalCode.studentInfo?.enrolledClass?.toString();
+          existingByNationalCode.studentInfo = { ...existingByNationalCode.studentInfo?.toObject?.() || {}, ...studentInfo };
+          if (studentInfo.enrolledClass) {
+            if (previousClass && previousClass !== studentInfo.enrolledClass.toString()) {
+              await Class.findByIdAndUpdate(previousClass, {
+                $pull: { students: existingByNationalCode._id },
+              });
+            }
+            await Class.findByIdAndUpdate(studentInfo.enrolledClass, {
+              $addToSet: { students: existingByNationalCode._id },
+            });
+          }
+        }
+        if (phone) existingByNationalCode.phone = phone;
+        await existingByNationalCode.save();
+        await existingByNationalCode.populate("studentInfo.enrolledClass", "name grade");
+        const userResponse = existingByNationalCode.toObject();
+        delete userResponse.password;
+        return Response.json(
+          {
+            message: `این کاربر قبلاً ثبت شده است و با موفقیت به مدرسه اضافه شد.`,
+            user: userResponse,
+            alreadyExists: true,
+          },
+          { status: 200 },
+        );
+      }
     }
 
     let user = await User.findOne({ email: normalizedEmail }).select('+password');

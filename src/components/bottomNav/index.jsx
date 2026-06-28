@@ -23,47 +23,42 @@ export default function BottomNav() {
   const router = useRouter();
 
   useEffect(() => {
+    const storedType = localStorage.getItem("type");
+    const storedSchoolRole = localStorage.getItem("schoolRole");
+    if (storedType || storedSchoolRole) {
+      setUser({
+        id: 1,
+        name: "",
+        type: storedType || "student",
+        schoolRole: storedSchoolRole || "student",
+        avatar: ""
+      });
+      setIsLoading(false);
+    }
+
     const fetchUserData = async () => {
       try {
-        setIsLoading(true);
         const token = localStorage.getItem("token");
-        if (!token) {
-          setIsLoading(false);
-          return;
-        }
-        
-        // دریافت اطلاعات واقعی کاربر از API
+        if (!token) return;
+
         const response = await fetch("/api/auth/me", {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           setUser(userData.user);
-        } else {
-          // Fallback برای تست
-          const mockUser = {
-            id: 1,
-            name: "تست",
-            type: localStorage.getItem("type") || "student",
-            avatar: "T"
-          };
-          setUser(mockUser);
+          if (userData.user) {
+            localStorage.setItem("type", userData.user.type);
+            if (userData.user.schoolRole) {
+              localStorage.setItem("schoolRole", userData.user.schoolRole);
+            }
+          }
         }
-        setIsLoading(false);
       } catch (error) {
         console.error("خطا در دریافت اطلاعات کاربر:", error);
-        // Fallback برای خطا
-        const mockUser = {
-          id: 1,
-          name: "تست",
-          type: "student",
-          avatar: "T"
-        };
-        setUser(mockUser);
-        setIsLoading(false);
       }
     };
     fetchUserData();
