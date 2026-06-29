@@ -1,19 +1,13 @@
-
 // Developed by Arshia Afshani
 import "./globals.css";
 import { Suspense } from "react";
 import { CartProvider } from "../hooks/useCart";
-import dynamic from "next/dynamic";
 import QuizExpireJob from "../components/QuizExpireJob";
-
-const BottomNav = dynamic(() => import("../components/bottomNav"), {
-  ssr: false,
-  loading: () => null,
-});
+import BottomNav from "../components/BottomNavWrapper";
 
 export const metadata = {
   title: "ویرگول",
-  description: "مدیریت هوشمند مدرسه"
+  description: "مدیریت هوشمند مدرسه",
 };
 
 // eslint-disable-next-line react/prop-types
