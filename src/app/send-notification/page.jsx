@@ -420,7 +420,7 @@ export default function SendNotificationPage() {
     return count;
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
@@ -436,6 +436,24 @@ export default function SendNotificationPage() {
         setNotificationImage(reader.result);
       };
       reader.readAsDataURL(file);
+
+      try {
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "notifications");
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotificationImage(data.url);
+        }
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
     }
   };
 

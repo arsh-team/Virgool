@@ -349,6 +349,72 @@ export default function ProfilePage() {
     window.location.href = "/";
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("حجم تصویر نباید بیشتر از 2 مگابایت باشد");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("فایل باید تصویر باشد");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "avatars");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("خطا در آپلود تصویر");
+      }
+
+      const uploadData = await uploadRes.json();
+      const avatarUrl = uploadData.url;
+
+      const profileRes = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...editForm,
+          profile: { ...editForm.profile, avatar: avatarUrl },
+        }),
+      });
+
+      if (profileRes.ok) {
+        const updatedUser = await profileRes.json();
+        setUser(updatedUser);
+        setEditForm((prev) => ({
+          ...prev,
+          profile: { ...prev.profile, avatar: avatarUrl },
+        }));
+        showToast.success("تصویر پروفایل با موفقیت تغییر کرد", {
+          duration: 3000,
+          position: "top-right",
+        });
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      setError(err.message || "خطا در تغییر تصویر پروفایل");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getRoleTitle = (role) => {
     const roles = {
       student: "دانش‌آموز",
@@ -440,25 +506,28 @@ export default function ProfilePage() {
                 <div className="w-full flex justify-center sm:justify-start p-6 bg-gradient-to-r from-blue-400 to-blue-600">
                   <div className="flex flex-col sm:flex-row items-center gap-4">
                     <div className="relative">
-                      <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold border-4 border-white shadow-lg">
-                        {user.firstname?.charAt(0) ||
-                          user.username?.charAt(0) ||
-                          "U"}
-                      </div>
-                      <button
-                        onClick={() =>
-                          showToast.warning(
-                            "امکان تغییر تصویر نمایه فعلا وجود ندارد",
-                            {
-                              duration: 2000,
-                              position: "top-right",
-                            },
-                          )
-                        }
-                        className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:scale-110 transition-transform"
-                      >
+                      {editForm.profile?.avatar ? (
+                        <img
+                          src={editForm.profile.avatar}
+                          alt="Avatar"
+                          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold border-4 border-white shadow-lg">
+                          {user.firstname?.charAt(0) ||
+                            user.username?.charAt(0) ||
+                            "U"}
+                        </div>
+                      )}
+                      <label className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:scale-110 transition-transform cursor-pointer">
                         <Camera className="w-4 h-4 text-gray-600" />
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                     <div className="text-center sm:text-right">
                       <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 sm:text-white mb-1.5">

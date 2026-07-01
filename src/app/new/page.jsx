@@ -146,17 +146,37 @@ export default function NewSchoolSubscription() {
   };
 
   const handleImageUpload = async (file, type) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (type === "logo") {
-          setLogoPreview(e.target.result);
-        }
-        // در آینده، اینجا آپلود واقعی به سرور انجام می‌شود
-        resolve("https://example.com/images/" + file.name);
-      };
-      reader.readAsDataURL(file);
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (type === "logo") {
+        setLogoPreview(e.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "school-logos");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "خطا در آپلود تصویر");
+      }
+
+      const data = await res.json();
+      return data.url;
+    } catch (err) {
+      console.error("Upload failed:", err);
+      throw err;
+    }
   };
 
   const validateSchoolInfo = () => {
@@ -465,8 +485,12 @@ export default function NewSchoolSubscription() {
                               onChange={async (e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  const url = await handleImageUpload(file, "logo");
-                                  handleInputChange("logo", url);
+                                  try {
+                                    const url = await handleImageUpload(file, "logo");
+                                    handleInputChange("logo", url);
+                                  } catch (err) {
+                                    setError(err.message || "خطا در آپلود تصویر");
+                                  }
                                 }
                               }}
                               className="hidden"

@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /panel/
+Disallow: /mypanel/
+Disallow: /wallet/
+Disallow: /notifications/
+Disallow: /send-notification/
+Disallow: /new/
+Disallow: /profile/
+Disallow: /services/
+Disallow: /panel/subscription/
+
+Sitemap: https://virgool.ir/sitemap.xml

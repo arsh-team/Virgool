@@ -5455,6 +5455,23 @@ export default function SchoolManagement() {
   ) => {
     try {
       const token = localStorage.getItem("token");
+
+      let receiptImageUrl = null;
+      if (receiptImage) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", receiptImage);
+        uploadFormData.append("folder", "payment-receipts");
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: uploadFormData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          receiptImageUrl = uploadData.url;
+        }
+      }
+
       const formData = new FormData();
       formData.append("studentId", studentId);
       formData.append("studentName", studentName);
@@ -5468,8 +5485,8 @@ export default function SchoolManagement() {
       formData.append("paymentMethodDetails", methodDetails);
       formData.append("description", description);
 
-      if (receiptImage) {
-        formData.append("receiptImage", receiptImage);
+      if (receiptImageUrl) {
+        formData.append("receiptImageUrl", receiptImageUrl);
       }
 
       const res = await fetch(`/api/school/payment-receipts`, {

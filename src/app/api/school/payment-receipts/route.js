@@ -199,7 +199,11 @@ export async function POST(request) {
     let receiptImageUrl = null;
     let receiptImagePublicId = null;
     
-    if (receiptImageFile && receiptImageFile.size > 0 && receiptImageFile.size < 5 * 1024 * 1024) {
+    const receiptImageUrlFromClient = formData.get("receiptImageUrl");
+    
+    if (receiptImageUrlFromClient) {
+      receiptImageUrl = receiptImageUrlFromClient;
+    } else if (receiptImageFile && receiptImageFile.size > 0 && receiptImageFile.size < 5 * 1024 * 1024) {
       const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedMimeTypes.includes(receiptImageFile.type)) {
         return Response.json({ error: "فرمت تصویر نامعتبر است. فقط JPEG، PNG، WebP و GIF مجاز هستند" }, { status: 400 });
