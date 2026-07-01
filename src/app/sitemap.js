@@ -1,6 +1,5 @@
-import { connectDB } from "../../lib/db";
-import School from "../../models/School";
-import Quiz from "../../models/Quiz";
+import { connectDB } from "../lib/db";
+import Service from "../models/Service";
 
 const BASE_URL = "https://virgool.ir";
 
@@ -19,7 +18,7 @@ export default async function sitemap() {
   try {
     await connectDB();
 
-    const schools = await School.find({ isActive: { $ne: false } })
+    const schools = await Service.find({ status: "فعال" })
       .select("slug updatedAt")
       .lean();
 

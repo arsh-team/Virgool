@@ -1,12 +1,12 @@
 import { connectDB } from "../../../lib/db";
-import School from "../../../models/School";
+import Service from "../../../models/Service";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
 
   try {
     await connectDB();
-    const school = await School.findOne({ slug }).select("title description slug schoolInfo poster").lean();
+    const school = await Service.findOne({ slug }).select("title description slug schoolInfo poster").lean();
 
     if (!school) {
       return {
