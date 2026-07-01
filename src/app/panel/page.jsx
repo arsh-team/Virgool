@@ -1803,10 +1803,12 @@ const StudentDetailsModal = ({ isOpen, onClose, student }) => {
                               {d.type === "warning"
                                 ? "اخطار"
                                 : d.type === "probation"
-                                  ? "تذکر"
+                                  ? "تذکر کتبی"
                                   : d.type === "suspension"
                                     ? "تعلیق"
-                                    : "تشویق"}
+                                    : d.type === "expulsion"
+                                      ? "اخراج"
+                                      : "تشویق"}
                             </span>
                           </td>
                           <td className="py-2 px-3">

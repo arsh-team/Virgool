@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// Developed by Arshia Afshani
+>>>>>>> 5a002fd31ecda021e9b7abae879f97bc813802c3
 import "./globals.css";
 import { Suspense } from "react";
 import { CartProvider } from "../hooks/useCart";
@@ -5,6 +9,7 @@ import QuizExpireJob from "../components/QuizExpireJob";
 import BottomNav from "../components/BottomNavWrapper";
 
 export const metadata = {
+<<<<<<< HEAD
   title: {
     default: "ویرگول | مدیریت هوشمند مدرسه - ثبت‌نام، شهریه و نمرات آنلاین",
     template: "%s | ویرگول",
@@ -74,6 +79,10 @@ export const metadata = {
   icons: {
     icon: "/icons/logo.svg",
   },
+=======
+  title: "ویرگول",
+  description: "مدیریت هوشمند مدرسه",
+>>>>>>> 5a002fd31ecda021e9b7abae879f97bc813802c3
 };
 
 // eslint-disable-next-line react/prop-types

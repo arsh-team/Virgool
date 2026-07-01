@@ -1542,6 +1542,7 @@ const QuestionsModal = ({ quiz, onClose, onUpdate }) => {
             <p className="text-gray-600 mt-1">{quiz.title}</p>
           </div>
           <div className="flex items-center gap-2">
+            <p>نوع سوال: </p>
             <CustomSelect
               value={newQuestionType}
               onChange={(e) => setNewQuestionType(e.target.value)}
@@ -1590,27 +1591,33 @@ const QuestionsModal = ({ quiz, onClose, onUpdate }) => {
                 placeholder="متن سوال ..."
               />
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <CustomSelect
-                  value={q.type}
-                  onChange={(e) => handleTypeChange(q._id, e.target.value)}
-                  className="p-2 border rounded-lg border-gray-200"
-                >
-                  <option value="multiple_choice">چند گزینه‌ای</option>
-                  <option value="true_false">صحیح/غلط</option>
-                  <option value="short_answer">کوتاه پاسخ</option>
-                </CustomSelect>
-                <input
-                  type="number"
-                  min="1"
-                  value={q.points}
-                  onChange={(e) =>
-                    updateQuestion(q._id, {
-                      points: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="p-2 border rounded-lg border-gray-200 w-24"
-                  placeholder="امتیاز"
-                />
+                <div className="flex items-center gap-2">
+                  <p>نوع: </p>
+                  <CustomSelect
+                    value={q.type}
+                    onChange={(e) => handleTypeChange(q._id, e.target.value)}
+                    className="p-2 border rounded-lg border-gray-200"
+                  >
+                    <option value="multiple_choice">چند گزینه‌ای</option>
+                    <option value="true_false">صحیح/غلط</option>
+                    <option value="short_answer">کوتاه پاسخ</option>
+                  </CustomSelect>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p>نمره: </p>
+                  <input
+                    type="number"
+                    min="1"
+                    value={q.points}
+                    onChange={(e) =>
+                      updateQuestion(q._id, {
+                        points: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="p-2 border rounded-lg border-gray-200 w-24"
+                    placeholder="نمره"
+                  />
+                </div>
               </div>
               {(q.type === "multiple_choice" || q.type === "true_false") && (
                 <div className="space-y-3">
@@ -1835,7 +1842,7 @@ export default function ClassManagement() {
 
       // 3. Fetch subjects (برای دبیران نمایش داده نمی‌شود ولی داده برای بخش نمرات نیاز است)
       const subjectsResponse = await fetch(
-        `/api/school/subjects?classId=${classId}`,
+        `/api/school/subjects?schoolId=${classDataResult.class.school}&classId=${classId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
